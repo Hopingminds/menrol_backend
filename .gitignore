@@ -1,0 +1,13 @@
+# ignore node_modules
+/node_modules
+
+# app logs
+/logs
+audit.json
+
+# environment variables
+.env
+.env.local
+
+# uploads folder
+/public/uploads
