@@ -18,7 +18,7 @@ import morganLogger from '../middleware/morgan.logger.js';
 import { limiter } from '../middleware/access.limiter.js';
 
 // Routes
-// import paymentRoutes from '../routes/payment.routes.js';
+import ServicesRoutes from '../routes/Services.routes.js'
 
 // Load environment variables from .env file
 dotenv.config();
@@ -29,14 +29,10 @@ const app = express();
 // Limiting middleware for all requests
 app.use(limiter);
 
-// Application database connection establishment
-import connectDatabase from '../database/connect.mongo.db.js';
-connectDatabase();
-
 // HTTP request logger middleware
 if (process.env.APP_NODE_ENV !== 'production') {
-  app.use(morganLogger());
-  app.use(morgan('tiny'));
+    app.use(morganLogger());
+    app.use(morgan('tiny'));
 }
 
 // Secure HTTP headers setting middleware
@@ -54,7 +50,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Set favicon in API routes
 if (process.env.APP_NODE_ENV !== 'production') {
-  app.use(favicon(`${appRoot}/public/favicon.ico`));
+    app.use(favicon(`${appRoot}/public/favicon.ico`));
 }
 
 // Set static folder
@@ -70,7 +66,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", ServerStatus.getServerLoadInfo, (req, res) => {
     const uptime = ServerStatus.calculateUptime();
     const serverLoadInfo = req.serverLoadInfo;
-    res.status(201).send({
+    res.status(200).send({
         success: true,
         message: "Menrol Backend!",
         dateTime: new Date().toLocaleString(),
@@ -84,10 +80,10 @@ app.get("/", ServerStatus.getServerLoadInfo, (req, res) => {
 });
 
 // Set application API routes
-// app.use('/api/v1', paymentRoutes);
+app.use('/api/v1', ServicesRoutes);
 
 // 404 ~ not found error handler
-app.use((_req, res, _next) => {
+app.use((req, res, _next) => {
     res.status(404).json({
         time: currentDateTime(),
         result: {
@@ -99,11 +95,12 @@ app.use((_req, res, _next) => {
   
 
 // 500 ~ internal server error handler
-app.use((err, _req, res, _next) => {
+app.use((err, req, res, next) => {
     if (res.headersSent) {
-        return _next('Something went wrong. App server error.');
+        return next('Something went wrong. App server error.');
     }
     if (err.message) {
+        console.log(err);
         return res.status(500).json({
             time: currentDateTime(),
             result: {
@@ -121,12 +118,6 @@ app.use((err, _req, res, _next) => {
         });
     }
 });
-
-// Example route that might throw an error
-app.get('/test', (req, res) => {
-    throw new Error('This is a test error');
-});
-
 
 // Default export ~ app
 export default app;

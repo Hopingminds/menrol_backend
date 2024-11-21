@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-export const WorkManSchema = new mongoose.Schema({
+export const ServiceProviderSchema = new mongoose.Schema({
     name: {
         type: String,
     },
@@ -25,8 +25,8 @@ export const WorkManSchema = new mongoose.Schema({
     rating: { type: Number, max: 5 },
     pricing: {
         pricingtype: {
-        type: String,
-        enum: ["hourly", "daily", "monthly"],
+            type: String,
+            enum: ["hourly", "daily", "contract"],
         },
         from: { type: Number },
         to: { type: Number },
@@ -62,12 +62,19 @@ export const WorkManSchema = new mongoose.Schema({
         default: false, // Indicates if the provider can be available for emergency work
     },
     category: { type: String },
-    subcategory: { type: String },
-    skills: {
-        type: [String],
-        required: false,
-        default: [],
-    },
+    subcategory:[{ 
+        title: {
+            type: String
+        },
+        pricing: {
+            pricingtype: {
+                type: String,
+                enum: ["hourly", "daily", "contract"],
+            },
+            from: { type: Number },
+            to: { type: Number },
+        },
+    }],
     languagesSpoken: {
         type: [String],
         required: false,
@@ -115,4 +122,4 @@ export const WorkManSchema = new mongoose.Schema({
     },
 },{ timestamps: true });
 
-export default mongoose.model.WorkMans || mongoose.model("WorkMan", WorkManSchema);
+export default mongoose.model.ServiceProviders || mongoose.model("ServiceProvider", ServiceProviderSchema);
