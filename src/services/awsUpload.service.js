@@ -31,3 +31,18 @@ export const uploadSubCategoryImage = multer({
         contentType: multerS3.AUTO_CONTENT_TYPE
     })
 }); 
+
+export async function deleteFileFromAWS(filename) {
+    if (!filename) {
+        throw new Error("File name is required");
+    }
+    try {
+        let fileKey = filename.split('.com/')[1].replaceAll(' ', '%20');
+        fileKey = decodeURIComponent(fileKey);
+
+        await s3.deleteObject({ Bucket: BUCKET, Key: fileKey }).promise();
+        return true;
+    } catch (error) {
+        return false
+    }
+}

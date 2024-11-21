@@ -23,14 +23,6 @@ export const ServiceProviderSchema = new mongoose.Schema({
     },
     location: { type: String },
     rating: { type: Number, max: 5 },
-    pricing: {
-        pricingtype: {
-            type: String,
-            enum: ["hourly", "daily", "contract"],
-        },
-        from: { type: Number },
-        to: { type: Number },
-    },
     availability: {
         type: String,
         enum: ["available", "not available", "on request"],
