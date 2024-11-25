@@ -1,5 +1,5 @@
 import ServicesModel from "../models/Services.model.js";
-import { deleteFileFromAWS } from "../services/awsUpload.service.js";
+import { deleteFileFromAWS } from "../services/aws.service.js";
 
 export async function createService(req, res) {
     try {

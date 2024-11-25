@@ -2,7 +2,7 @@ import { Router } from 'express'
 const router = Router()
 
 import * as ServicesController from '../controllers/ServicesController.js'
-import { uploadSubCategoryImage } from '../services/awsUpload.service.js';
+import { uploadSubCategoryImage } from '../services/aws.service.js';
 
 // POST ROUTES
 router.route('/createService').post(uploadSubCategoryImage.array('subcategoryImages',10), ServicesController.createService);

@@ -19,6 +19,6 @@ export const UserSchema = new mongoose.Schema({
     profileImage:{
         type: String
     },
-});
+},{ timestamps: true });
 
 export default mongoose.model.Users || mongoose.model('User', UserSchema);

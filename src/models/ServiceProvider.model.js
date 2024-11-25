@@ -6,20 +6,26 @@ export const ServiceProviderSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: [false, "Password is required."],
+        select: false
     },
     email: {
         type: String,
-        unique: true,
     },
     phone: {
         type: Number,
         unique: true,
     },
+    authToken:{
+        type:String,
+        select: false
+    },
+    isProfileComplete:{
+        type:Boolean,
+        default:false
+    },
     profileImage: { type: String },
     bio: {
         type: String,
-        required: false,
     },
     location: { type: String },
     rating: { type: Number, max: 5 },
@@ -28,9 +34,8 @@ export const ServiceProviderSchema = new mongoose.Schema({
         enum: ["available", "not available", "on request"],
         default: "available",
     },
-    availableHours: {
-        type: [
-        {
+    availableTiming: {
+        type: [{
             day: {
             type: String,
             enum: [
@@ -45,13 +50,12 @@ export const ServiceProviderSchema = new mongoose.Schema({
             },
             start: { type: String }, // format: HH:MM
             end: { type: String }, // format: HH:MM
-        },
-        ],
+        }],
         default: [],
     },
-    emergencyAvailability: {
+    instantAvailability: {
         type: Boolean,
-        default: false, // Indicates if the provider can be available for emergency work
+        default: false, // Indicates if the provider can be available for instant work
     },
     category: { type: String },
     subcategory:[{ 
@@ -69,7 +73,6 @@ export const ServiceProviderSchema = new mongoose.Schema({
     }],
     languagesSpoken: {
         type: [String],
-        required: false,
         default: [],
     },
     experience: { type: Number },
@@ -104,12 +107,10 @@ export const ServiceProviderSchema = new mongoose.Schema({
     },
     gallery: {
         type: [String], // Array of image URLs for provider's previous work
-        required: false,
     },
     socialProfiles: {
         type: Map,
         of: String,
-        required: false,
         default: {}, // Example: { LinkedIn: "https://linkedin.com/in/johndoe", Instagram: "https://instagram.com/johndoe" }
     },
 },{ timestamps: true });

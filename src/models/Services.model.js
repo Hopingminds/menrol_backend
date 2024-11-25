@@ -15,6 +15,6 @@ export const ServicesSchema = new mongoose.Schema({
             required: [true, "Image is required with specific dimensions."]
         }
     }]
-});
+},{ timestamps: true });
 
 export default mongoose.model.Services || mongoose.model('Services', ServicesSchema);
