@@ -46,6 +46,20 @@ export const uploadServiceProviderImage = multer({
     })
 });
 
+export const uploadServiceProviderWorkImage = multer({
+    storage: multerS3({
+        s3: s3,
+        acl: "public-read",
+        bucket: BUCKET,
+        key: function (req, file, cb) {
+            var newFileName = Date.now() + "-" + file.originalname;
+            var fullPath = 'ServiceProvider/WorkImages/'+ newFileName;
+            cb(null, fullPath);
+        },
+        contentType: multerS3.AUTO_CONTENT_TYPE
+    })
+});
+
 export async function deleteFileFromAWS(filename) {
     if (!filename) {
         throw new Error("File name is required");

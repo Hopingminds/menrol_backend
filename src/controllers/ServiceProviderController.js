@@ -39,7 +39,7 @@ export async function verifyForExistingUser(req, res) {
 	}
 }
 
-export async function sendOtpForRegister(req, res) {
+export async function sendOtpForServiceProvider(req, res) {
     try {
         const { phone } = req.body;
 
@@ -49,20 +49,9 @@ export async function sendOtpForRegister(req, res) {
             return res.status(400).json({ success: false, message: 'Invalid phone number format.' });
         }
 
-        // Check if service provider already exists
-        const existingProvider = await ServiceProviderModel.findOne({ phone });
-        if (existingProvider) {
-            return res.status(409).json({
-                success: false,
-                message: 'Service provider already registered. Please log in instead.',
-            });
-        }
-
         const result = await sendOTP(phone);
 
         if (!result.success) {
-            // console.log(result);
-            
             throw new Error('Failed to send OTP.');
         }
         
@@ -73,32 +62,23 @@ export async function sendOtpForRegister(req, res) {
     }
 }
 
-export async function verifyServiceProviderOtpAndRegister(req, res) {
+export async function verifyServiceProviderOtp(req, res) {
     try {
         const { phone, otp } = req.body;
 
         if (!phone || !otp) {
             return res.status(400).json({ success: false, message: 'Phone and OTP are required' });
         }
-        
-        // Check if the service provider already exists
-        const existingProvider = await ServiceProviderModel.findOne({ phone });
-        if (existingProvider) {
-            return res.status(409).json({ success: false, message: 'Service provider already registered' });
-        }
 
         const otpuser = await OtpModel.findOne({ phone });
 
         if (!otpuser) {
-            return res.status(400).json({ success: false, message: 'Service Provider not found' });
+            return res.status(400).json({ success: false, message: 'Request for otp first.' });
         }
-
 
         if (new Date(otpuser.otpExpires) < new Date()) {
             return res.status(400).json({ success: false, message: 'OTP has expired', expiredotp: true });
         }
-
-        console.log(otpuser.otp);
         
         const isMatch = await bcrypt.compare(otp, otpuser.otp);
         if (!isMatch) {
@@ -106,7 +86,10 @@ export async function verifyServiceProviderOtpAndRegister(req, res) {
         }
 
         // Create new service provider
-        const serviceProvider = await ServiceProviderModel.create({ phone });
+        let serviceProvider = await ServiceProviderModel.findOne({ phone });
+        if (!serviceProvider) {
+            serviceProvider = await ServiceProviderModel.create({ phone });
+        }
 
         // Generate JWT token for new user
         const token = jwt.sign(
@@ -195,6 +178,43 @@ export async function uploadUserProfile(req, res) {
             success: true, 
             message: "Profile image uploaded successfully.", 
             data: user 
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+    }
+}
+
+export async function uploadWork(req, res) {
+    try {
+        const { userID } = req.sp;
+
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "No files uploaded." 
+            });
+        }
+
+        // Extract the locations (URLs) of the uploaded files
+        const fileLocations = req.files.map(file => file.location);
+
+        // Find the user and update their profile image URL
+        const user = await ServiceProviderModel.findById(userID);
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "User not found." 
+            });
+        }
+
+        // Add the file locations to the gallery
+        user.gallery = user.gallery.concat(fileLocations);
+        await user.save();
+
+        return res.status(200).json({ 
+            success: true, 
+            message: "Files uploaded and gallery updated successfully.", 
+            data: { gallery: user.gallery } 
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });

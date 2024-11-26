@@ -23,15 +23,12 @@ export async function sendOTP(mobileNo) {
         const entityid = process.env.ENTITY_ID;
         const tempid = process.env.TEMP_ID;
         const accusage = 1;
-        const message = `${otp} is your HopingMinds verification code. Dear User, please enter this code to proceed with HopingMinds.`;
+        const message = `Dear HMian, Your OTP for login to HopingMinds is ${otp}. OTP is Valid for 10 minutes. Please do not share this OTP. Regards,HopingMinds`;
 
         const url = `${process.env.SMS_BASE_URI}?user=HMians&key=${key}&mobile=${number}&message=${message}&senderid=${senderid}&accusage=${accusage}&entityid=${entityid}&tempid=${tempid}`;
-        
-        console.log(url);
-        
+
         // Send SMS
         const response = await axios.get(url);
-        console.log(response.data);
         if (!response.data.includes('success')) { // Adjust based on actual API response
             
             throw new Error('Failed to send OTP');
