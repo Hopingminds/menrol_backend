@@ -5,6 +5,12 @@ import ServiceProviderModel from "../models/ServiceProvider.model.js";
 import { sendOTP } from "../services/otp.service.js";
 
 
+/** POST: http://localhost:3027/api/v1/verifyForExistingUser
+ * @body {
+ *  "phone": "8765445678",
+ *  "email": "example@email.com"
+ * }
+ */
 export async function verifyForExistingUser(req, res) {
 	try {
 		const { email, phone } = req.body;
@@ -39,6 +45,11 @@ export async function verifyForExistingUser(req, res) {
 	}
 }
 
+/** POST: http://localhost:3027/api/v1/sendOtpForServiceProvider
+ * @body {
+ *  "phone": "8765445678"
+ * }
+ */
 export async function sendOtpForServiceProvider(req, res) {
     try {
         const { phone } = req.body;
@@ -62,6 +73,12 @@ export async function sendOtpForServiceProvider(req, res) {
     }
 }
 
+/** POST: http://localhost:3027/api/v1/verifyServiceProviderOtp
+ * @body {
+ *  "phone": "8765445678",
+ *  "otp": "238295"
+ * }
+ */
 export async function verifyServiceProviderOtp(req, res) {
     try {
         const { phone, otp } = req.body;
@@ -118,6 +135,12 @@ export async function verifyServiceProviderOtp(req, res) {
     }
 }
 
+/** PUT: http://localhost:3027/api/v1/completeServiceProviderDetails
+ * @body {
+ *  "phone": "8765445678",
+ *  "email": "example@email.com"
+ * }
+ */
 export async function completeServiceProviderDetails(req, res){
     try {
         const { userID } = req.sp; // Assuming the service provider ID is passed as a route parameter.
@@ -146,6 +169,11 @@ export async function completeServiceProviderDetails(req, res){
     }
 }
 
+/** PUT: http://localhost:3027/api/v1/uploadUserProfile
+ * @body {
+ *  "profile": "file"
+ * }
+ */
 export async function uploadUserProfile(req, res) {
     try {
         const { userID } = req.sp;
@@ -184,6 +212,11 @@ export async function uploadUserProfile(req, res) {
     }
 }
 
+/** PUT: http://localhost:3027/api/v1/uploadUserProfile
+ * @body {
+ *  "gallery": ["file1","file2"]
+ * }
+ */
 export async function uploadWork(req, res) {
     try {
         const { userID } = req.sp;

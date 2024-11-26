@@ -1,6 +1,13 @@
 import ServicesModel from "../models/Services.model.js";
 import { deleteFileFromAWS } from "../services/aws.service.js";
 
+/** POST: http://localhost:3027/api/v1/createService
+ * @body {
+ *  "category": "SampleCategory",
+ *  "subcategory": "[ {\"title\": \"Sub1\"}, {\"title\": \"Sub2\"}]",
+ *  "subcategoryImages": ["file1", "file2"]
+ * }
+ */
 export async function createService(req, res) {
     try {
         const { category, subcategory } = req.body;
@@ -63,6 +70,7 @@ export async function createService(req, res) {
     }
 }
 
+/** GET: http://localhost:3027/api/v1/getAllServices */
 export async function getAllServices(req, res) {
     try {
         const services = await ServicesModel.find();
@@ -83,6 +91,13 @@ export async function getAllServices(req, res) {
     }
 }
 
+/** PUT: http://localhost:3027/api/v1/addSubCategory
+ * @body {
+ *  "category": "SampleCategory",
+ *  "subcategory": "[ {\"title\": \"Sub1\"}, {\"title\": \"Sub2\"}]", //send only new subcategory in it not all subcategory subcategory
+ *  "subcategoryImages": ["file1", "file2"]
+ * }
+ */
 export async function addSubCategory(req, res) {
     try {
         const { category, subcategory } = req.body;
@@ -113,27 +128,14 @@ export async function addSubCategory(req, res) {
             });
         }
 
-        // Add new subcategories to the existing service
+        // Map new subcategories with images
         const newSubcategories = subcategories.map((subcat, index) => ({
             title: subcat.title,
             image: subcategoryImageUrls[index] || null
         }));
 
-        const filteredSubcategories = newSubcategories.filter(
-            newSubcat => !service.subcategory.some(existingSubcat => existingSubcat.title === newSubcat.title)
-        );
-
-        // Skip duplicates and only add unique subcategories
-        if (filteredSubcategories.length === 0) {
-            return res.status(200).json({
-                success: true,
-                message: "No new subcategories were added as all provided titles already exist.",
-                data: service
-            });
-        }
-
-        // Add the new subcategories
-        service.subcategory.push(...filteredSubcategories);
+        // Add new subcategories without filtering
+        service.subcategory.push(...newSubcategories);
 
         // Save the updated service
         const updatedService = await service.save();
@@ -149,6 +151,12 @@ export async function addSubCategory(req, res) {
     }
 }
 
+/** DELETE: http://localhost:3027/api/v1/removeSubCategory
+ * @body {
+    "category":"SampleCategory",
+    "subcategoryTitle":"Sub2"
+}
+ */
 export async function removeSubCategory(req, res) {
     try {
         const { category, subcategoryTitle } = req.body;
@@ -213,6 +221,11 @@ export async function removeSubCategory(req, res) {
     }
 }
 
+/** DELETE: http://localhost:3027/api/v1/removeSubCategory
+ * @body {
+    "category":"SampleCategory"
+}
+ */
 export async function deleteService(req, res) {
     try {
         const { category } = req.body;
