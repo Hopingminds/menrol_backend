@@ -19,6 +19,10 @@ export const UserSchema = new mongoose.Schema({
     profileImage:{
         type: String
     },
+    authToken:{
+        type:String,
+        select: false
+    },
 },{ timestamps: true });
 
 export default mongoose.model.Users || mongoose.model('User', UserSchema);

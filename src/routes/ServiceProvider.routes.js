@@ -6,7 +6,6 @@ import { uploadServiceProviderImage, uploadServiceProviderWorkImage } from '../s
 import SPAuth from '../middleware/ServiceProvide.Auth.js';
 
 // POST ROUTES
-router.route('/sendOtpForServiceProvider').post( ServiceProviderController.sendOtpForServiceProvider);
 router.route('/verifyServiceProviderOtp').post( ServiceProviderController.verifyServiceProviderOtp);
 
 // GET ROUTES

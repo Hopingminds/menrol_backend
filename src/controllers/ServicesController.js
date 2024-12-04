@@ -221,7 +221,7 @@ export async function removeSubCategory(req, res) {
     }
 }
 
-/** DELETE: http://localhost:3027/api/v1/removeSubCategory
+/** DELETE: http://localhost:3027/api/v1/deleteService
  * @body {
     "category":"SampleCategory"
 }

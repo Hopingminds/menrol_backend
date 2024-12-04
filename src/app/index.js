@@ -20,6 +20,7 @@ import { limiter } from '../middleware/access.limiter.js';
 // Routes
 import ServicesRoutes from '../routes/Services.routes.js'
 import ServiceProviderRoutes from '../routes/ServiceProvider.routes.js'
+import CommonRoutes from '../routes/Common.routes.js'
 
 // Load environment variables from .env file
 dotenv.config();
@@ -81,6 +82,7 @@ app.get("/", ServerStatus.getServerLoadInfo, (req, res) => {
 });
 
 // Set application API routes
+app.use('/api/v1', CommonRoutes);
 app.use('/api/v1', ServicesRoutes);
 app.use('/api/v1', ServiceProviderRoutes);
 

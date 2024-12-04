@@ -16,16 +16,15 @@ export async function sendOTP(mobileNo) {
             throw new Error('Invalid mobile number format');
         }
 
-        const key = process.env.OTP_KEY;
-        const otp = generateOtp();
         const number = mobileNo;
+        const otp = generateOtp();
+        const key = process.env.OTP_KEY;
+        const user = process.env.OTP_USER;
         const senderid = process.env.SENDER_ID;
-        const entityid = process.env.ENTITY_ID;
-        const tempid = process.env.TEMP_ID;
         const accusage = 1;
-        const message = `Dear HMian, Your OTP for login to HopingMinds is ${otp}. OTP is Valid for 10 minutes. Please do not share this OTP. Regards,HopingMinds`;
+        const message = `Dear user, ${otp} is your OTP / verification code and is valid for 5 minutes. Do not share this with anyone. - Menrol`;
 
-        const url = `${process.env.SMS_BASE_URI}?user=HMians&key=${key}&mobile=${number}&message=${message}&senderid=${senderid}&accusage=${accusage}&entityid=${entityid}&tempid=${tempid}`;
+        const url = `${process.env.SMS_BASE_URI}?user=${user}&key=${key}&mobile=${number}&message=${message}&senderid=${senderid}&accusage=${accusage}`;
 
         // Send SMS
         const response = await axios.get(url);
