@@ -1,4 +1,7 @@
-import UserModel from "../models/User.model";
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken'
+import OtpModel from "../models/Otp.model.js";
+import UserModel from "../models/User.model.js";
 
 export async function verifyUserOtp(req, res) {
     try {
