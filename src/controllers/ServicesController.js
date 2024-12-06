@@ -13,7 +13,7 @@ export async function createService(req, res) {
         const { category, subcategory } = req.body;
 
         // Parse subcategory data only if it's a string
-        const subcategories = typeof subcategory === 'string' ? JSON.parse(JSON.parse(subcategory)) : subcategory;
+        const subcategories = typeof subcategory === 'string' ? JSON.parse(subcategory) : subcategory;
 
         // Validate inputs
         if (!category ||  !Array.isArray(subcategories) || subcategories.length === 0) {
