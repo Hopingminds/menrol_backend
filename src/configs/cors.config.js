@@ -1,7 +1,7 @@
 const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:5173',
-    'https://hopingminds.com'
+    'https://menrol-admin.vercel.app'
   ];
   
   const corsOptions = {
