@@ -27,7 +27,17 @@ export const ServiceProviderSchema = new mongoose.Schema({
     bio: {
         type: String,
     },
-    location: { type: String },
+    location: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point',
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            required: true,
+        }
+    },
     rating: { type: Number, max: 5 },
     availability: {
         type: String,
@@ -114,5 +124,7 @@ export const ServiceProviderSchema = new mongoose.Schema({
         default: {}, // Example: { LinkedIn: "https://linkedin.com/in/johndoe", Instagram: "https://instagram.com/johndoe" }
     },
 },{ timestamps: true });
+
+ServiceProviderSchema.index({ location: '2dsphere' });
 
 export default mongoose.model.ServiceProviders || mongoose.model("ServiceProvider", ServiceProviderSchema);

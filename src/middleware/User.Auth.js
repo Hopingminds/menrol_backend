@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import 'dotenv/config'
-import UserModel from "../models/User.model";
+import UserModel from "../models/User.model.js";
 
 export default async function UserAuth(req,res,next) {
     try {

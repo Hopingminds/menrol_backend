@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const ServiceOrderSchema = new mongoose.Schema({
+const ServiceRequestSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -9,7 +9,7 @@ const ServiceOrderSchema = new mongoose.Schema({
     serviceProvider: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ServiceProvider',
-        required: true,
+        default: null,
     },
     service: {
         type: mongoose.Schema.Types.ObjectId,
@@ -24,6 +24,21 @@ const ServiceOrderSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    location: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point',
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            required: true,
+        }
+    },
+    address:{
+        type: String,
+        required: true,
+    },
     scheduledDate: {
         type: Date,
         required: true,
@@ -35,13 +50,24 @@ const ServiceOrderSchema = new mongoose.Schema({
     },
     totalCost: {
         type: Number,
-        required: true,
     },
-    paymentStatus: {
+    payment: {
+        amount: { type: Number },
+        status: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' },
+        method: { type: String, enum: ['app', 'cash'], default: 'app' },
+    },
+    otp: {
+        start: { type: String, default: null },
+        end: { type: String, default: null },
+    },
+    instructions: {
         type: String,
-        enum: ['pending', 'completed', 'failed'],
-        default: 'pending',
+        default: null,
     },
+    images: [{
+        type: String,
+        default: null,
+    }],
     feedback: {
         rating: {
             type: Number,
@@ -56,4 +82,6 @@ const ServiceOrderSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-export default mongoose.model.ServiceOrder || mongoose.model('ServiceOrder', ServiceOrderSchema);
+ServiceRequestSchema.index({ location: '2dsphere' });
+
+export default mongoose.model.ServiceRequest || mongoose.model('ServiceRequest', ServiceRequestSchema);

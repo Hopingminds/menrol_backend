@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import OtpModel from "../models/Otp.model.js";
 import ServiceProviderModel from "../models/ServiceProvider.model.js";
 import { sendOTP } from "../services/otp.service.js";
+import ServiceRequestModel from '../models/ServiceRequest.model.js';
 
 
 /** POST: http://localhost:3027/api/v1/verifyForExistingUser
@@ -222,6 +223,84 @@ export async function uploadWork(req, res) {
             data: { gallery: user.gallery } 
         });
     } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+    }
+}
+
+/** PUT: http://localhost:3027/api/v1/updateSPLocation
+ * @body {
+    "longitude": 30.698279,
+    "latitude": 76.690802
+}
+ */
+export async function updateSPLocation(req, res) {
+    try {
+        // Extract the user ID and new location coordinates from the request
+        const { userID } = req.sp;
+        const { longitude, latitude } = req.body;
+
+        // Validate input
+        if (longitude == null || latitude == null) {
+            return res.status(400).json({ message: "Longitude and latitude are required." });
+        }
+
+        // Find and update the user's location
+        const updatedProvider = await ServiceProviderModel.findByIdAndUpdate(
+            userID  ,
+            { location: { type: "Point", coordinates: [longitude, latitude] } },
+            { new: true, runValidators: true } // Return the updated document and run schema validators
+        );
+
+        if (!updatedProvider) {
+            return res.status(404).json({ message: "Service provider not found." });
+        }
+
+        res.status(200).json({ message: "Location updated successfully.", provider: updatedProvider });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+    }
+}
+
+/** GET: http://localhost:3027/api/v1/getServicesRequestNearSPLocation?radius=10 */
+export async function getServicesRequestNearSPLocation(req, res) {
+    try {
+        // Extract the service provider's ID and optional radius (in kilometers) from the request
+        const { userID } = req.sp;
+        const { radius = 5 } = req.query; // Default radius: 5 km
+
+        // Find the service provider by ID and get their location
+        const serviceProvider = await ServiceProviderModel.findById(userID);
+
+        if (!serviceProvider) {
+            return res.status(404).json({ message: "Service provider not found." });
+        }
+
+        const { coordinates } = serviceProvider.location;
+        
+        if (!coordinates || coordinates.length !== 2) {
+            return res.status(400).json({ message: "Invalid or missing location for the service provider." });
+        }
+
+        // Convert radius from kilometers to meters (MongoDB uses meters for geospatial queries)
+        const radiusInMeters = radius * 1000;
+
+        // Find service requests within the specified radius
+        const nearbyRequests = await ServiceRequestModel.find({
+            location: {
+                $near: {
+                    $geometry: {
+                        type: "Point",
+                        coordinates: coordinates,
+                    },
+                    $maxDistance: radiusInMeters,
+                },
+            },
+            status: { $in: ["pending", "confirmed"] }, // Filter for relevant statuses
+        });
+
+        res.status(200).json({ message: "Nearby service requests retrieved successfully.", requests: nearbyRequests });
+    } catch (error) {
+        console.log(error.message);
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
     }
 }
