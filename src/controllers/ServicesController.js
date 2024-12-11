@@ -143,7 +143,7 @@ export async function addSubCategory(req, res) {
         // Return the updated service
         return res.status(200).json({
             success: true,
-            message: `${filteredSubcategories.length} subcategories added successfully.`,
+            message: `${newSubcategories.length} subcategories added successfully.`,
             data: updatedService
         });
     } catch (error) {
