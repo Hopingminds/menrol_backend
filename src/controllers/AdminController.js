@@ -1,9 +1,11 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import 'dotenv/config'
-import AdminModel from "../models/Admin.model.js";
 import { sendOTP } from '../services/otp.service.js';
+import AdminModel from "../models/Admin.model.js";
 import OtpModel from '../models/Otp.model.js';
+import ServiceProviderModel from "../models/ServiceProvider.model.js";
+import UserModel from "../models/User.model.js";
 
 export async function registerAdmin(req, res) {
     try {
@@ -129,7 +131,7 @@ export async function verifyAdminOtp(req, res) {
             { expiresIn: '7d' }
         );
 
-        await UserModel.updateOne({ phone }, { authToken: token });
+        await AdminModel.updateOne({ phone }, { authToken: token });
 
         // Clean up OTP record
         await OtpModel.deleteOne({ phone });
@@ -139,6 +141,30 @@ export async function verifyAdminOtp(req, res) {
             message: 'User verified and registered successfully',
             token,
         });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function getAllServiceProviders(req, res) {
+    try {
+        const serviceproviders = await ServiceProviderModel.find();
+        if(!serviceproviders){
+            return res.status(404).json({ success: false, message: 'No service providers found.' });
+        }
+        return res.status(200).json({ success: true, serviceproviders });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function getAllUsers(req, res) {
+    try {
+        const users = await UserModel.find();
+        if(!users){
+            return res.status(404).json({ success: false, message: 'No service providers found.' });
+        }
+        return res.status(200).json({ success: true, users });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
     }

@@ -10,6 +10,14 @@ export const ServicesSchema = new mongoose.Schema({
             type: String,
             required: true
         },
+        pricing: {
+            pricingtype: {
+                type: String,
+                enum: ["hourly", "daily", "contract"],
+            },
+            from: { type: Number },
+            to: { type: Number },
+        },
         image:{
             type: String,
             required: [true, "Image is required with specific dimensions."]

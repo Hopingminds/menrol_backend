@@ -6,11 +6,6 @@ const ServiceRequestSchema = new mongoose.Schema({
         ref: 'User',
         required: true,
     },
-    serviceProvider: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'ServiceProvider',
-        default: null,
-    },
     service: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Services',
@@ -35,30 +30,50 @@ const ServiceRequestSchema = new mongoose.Schema({
             required: true,
         }
     },
-    address:{
+    address: {
         type: String,
         required: true,
     },
-    scheduledDate: {
-        type: Date,
-        required: true,
+    requestType:{
+        type: String,
+        enum: ["hourly", "daily", "contract"],
+        default: "daily",
+    },
+    scheduledTiming: {
+        startTime: {
+            type: Date, // DateTime for the start of the appointment
+            required: true,
+        },
+        endTime: {
+            type: Date, // DateTime for the start of the appointment
+            default: null,
+        },
+    },
+    workersRequirment: {
+        type: Number,
+        default: 1,
     },
     status: {
         type: String,
-        enum: ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'],
+        enum: ['pending', 'confirmed', 'cancelled'],
         default: 'pending',
     },
-    totalCost: {
-        type: Number,
-    },
     payment: {
-        amount: { type: Number },
-        status: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' },
+        amount: { type: Number, required: true }, // The total amount to be paid.
+        paidAmount: { type: Number, default: 0 }, // Amount paid so far.
+        dueAmount: { type: Number, default: 0 },  // Amount still to be paid.
+        status: { 
+            type: String, 
+            enum: ['pending', 'partial', 'completed', 'failed'], 
+            default: 'pending' 
+        },
         method: { type: String, enum: ['app', 'cash'], default: 'app' },
-    },
-    otp: {
-        start: { type: String, default: null },
-        end: { type: String, default: null },
+        paymentType: { 
+            type: String, 
+            enum: ['upfront', 'post-service'], 
+            default: 'upfront' 
+        },
+        paymentDate: { type: Date, default: null }, // The date when the payment was made.
     },
     instructions: {
         type: String,
@@ -68,18 +83,6 @@ const ServiceRequestSchema = new mongoose.Schema({
         type: String,
         default: null,
     }],
-    feedback: {
-        rating: {
-            type: Number,
-            min: 1,
-            max: 5,
-            default: null,
-        },
-        comment: {
-            type: String,
-            default: null,
-        }
-    }
 }, { timestamps: true });
 
 ServiceRequestSchema.index({ location: '2dsphere' });

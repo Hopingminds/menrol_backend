@@ -47,16 +47,16 @@ export const ServiceProviderSchema = new mongoose.Schema({
     availableTiming: {
         type: [{
             day: {
-            type: String,
-            enum: [
-                "Monday",
-                "Tuesday",
-                "Wednesday",
-                "Thursday",
-                "Friday",
-                "Saturday",
-                "Sunday",
-            ],
+                type: String,
+                enum: [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday",
+                ],
             },
             start: { type: String }, // format: HH:MM
             end: { type: String }, // format: HH:MM

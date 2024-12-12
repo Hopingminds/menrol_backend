@@ -22,6 +22,11 @@ export const UserSchema = new mongoose.Schema({
         type:String,
         select: false
     },
+    perferredLanguage: {
+        type: String,
+        enum: ["English", "Hindi"],
+        default: "English",
+    }
 },{ timestamps: true });
 
 export default mongoose.model.Users || mongoose.model('User', UserSchema);

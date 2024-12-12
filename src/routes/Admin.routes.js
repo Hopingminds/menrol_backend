@@ -9,6 +9,8 @@ router.route('/loginWithEmailFirstStep').post(AdminController.loginWithEmailFirs
 router.route('/verifyAdminOtp').post(AdminController.verifyAdminOtp);
 
 // GET ROUTES   
+router.route('/getAllServiceProviders').get(AdminController.getAllServiceProviders);
+router.route('/getAllUsers').get(AdminController.getAllUsers);
 
 // PUT ROUTES
 
