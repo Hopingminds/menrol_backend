@@ -11,13 +11,22 @@ export async function createServiceRequest(req, res) {
             subcategory,
             location,
             address,
-            scheduledDate,
-            totalCost,
+            requestType,
+            scheduledTiming,
             instructions,
+            workersRequirment,
+            payment,
         } = req.body;
 
         // Validate required fields
-        if (!service || !subcategory || !location || !scheduledDate || !address) {
+        if (!service ||
+            !subcategory ||
+            !location ||
+            !scheduledTiming ||
+            !address ||
+            !workersRequirment ||
+            !payment ||
+            !requestType) {
             return res.status(400).json({ success: false, message: "All required fields must be provided." });
         }
 
@@ -37,16 +46,20 @@ export async function createServiceRequest(req, res) {
         const instImages = req.files.map(file => file.location);
         const parsedsubcategory = JSON.parse(subcategory);
         const parsedlocation = JSON.parse(location);
+        const parsedpayment = JSON.parse(payment);
+        const parsedscheduledTiming = JSON.parse(scheduledTiming);
         
         // Create the service request
         const serviceRequest = new ServiceRequestModel({
             user: userID,
             service,
             subcategory: parsedsubcategory,
+            requestType,
+            workersRequirment,
+            payment: parsedpayment,
             location: parsedlocation,
             address,
-            scheduledDate,
-            totalCost,
+            scheduledTiming: parsedscheduledTiming,
             instructions: instructions || null,
             images: instImages || [],
         });
@@ -58,41 +71,6 @@ export async function createServiceRequest(req, res) {
             success: false, 
             message: "Service request created successfully.",
             data: savedRequest
-        });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
-    }
-}
-
-export async function getServicesRequestNearLocation(req, res) {
-    try {
-        const { longitude, latitude, maxDistance } = req.query;
-
-        // Validate the inputs
-        if (!longitude || !latitude) {
-            return res.status(400).json({ success: false, message: "Longitude and latitude are required." });
-        }
-
-        const distanceInMeters = maxDistance ? parseInt(maxDistance) : 5000; // Default to 5000 meters (5 km)
-
-        // Find service providers near the specified location
-        const serviceProviders = await ServiceProviderModel.find({
-            location: {
-                $near: {
-                    $geometry: {
-                        type: "Point",
-                        coordinates: [parseFloat(longitude), parseFloat(latitude)],
-                    },
-                    $maxDistance: distanceInMeters, // Search within maxDistance meters
-                }
-            }
-        }).populate('servicesOffered');
-
-        return res.status(200).json({
-            success: false,
-            message: "Service providers found near your location.",
-            data: serviceProviders
         });
     } catch (error) {
         console.log(error);
