@@ -118,18 +118,40 @@ export async function getAllServices(req, res) {
                 }
             ]);
         } else {
-            // If no providerTypes is provided, return all services and subcategories
-            services = await ServicesModel.find();
-        }
+            // Fetch all services in one go
+            const all = await ServicesModel.find();
 
-        // Handle the case when no services are found
-        if (services.length === 0) {
+            // Filter subcategories in-memory to avoid multiple database queries
+            const filterSubcategories = (service, condition) => {
+                const filteredSubcategories = service.subcategory.filter(condition);
+                return filteredSubcategories.length > 0
+                    ? { ...service.toObject(), subcategory: filteredSubcategories }
+                    : null;
+            };
+
+            // Filter for hourly, daily, and contract workers
+            const hourly = all
+                .map(service => filterSubcategories(service, subcat => subcat.hourlyWorker > 0))
+                .filter(service => service);
+
+            const daily = all
+                .map(service => filterSubcategories(service, subcat => subcat.dailyWageWorker > 0))
+                .filter(service => service);
+
+            const contract = all
+                .map(service => filterSubcategories(service, subcat => subcat.contractWorker > 0))
+                .filter(service => service);
+
             return res.status(200).json({
-                success: false,
-                message: "No data found"
+                success: true,
+                all,
+                hourly,
+                daily,
+                contract,
             });
         }
 
+        // Response when providerTypes is provided
         return res.status(200).json({
             success: true,
             data: services
