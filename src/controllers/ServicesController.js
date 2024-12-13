@@ -80,45 +80,47 @@ export async function getAllServices(req, res) {
         const query = {};
 
         if (providerTypes) {
-            // If providerTypes includes "hourly", filter services where hourlyWorker > 0
+            // If providerTypes includes "hourly", filter subcategories where hourlyWorker > 0
             if (providerTypes.includes("hourly")) {
                 query["subcategory.hourlyWorker"] = { $gt: 0 };
             }
 
-            // If providerTypes includes "daily", filter services where dailyWageWorker > 0
+            // If providerTypes includes "daily", filter subcategories where dailyWageWorker > 0
             if (providerTypes.includes("daily")) {
                 query["subcategory.dailyWageWorker"] = { $gt: 0 };
             }
 
-            // If providerTypes includes "contract", filter services where contractWorker > 0
+            // If providerTypes includes "contract", filter subcategories where contractWorker > 0
             if (providerTypes.includes("contract")) {
                 query["subcategory.contractWorker"] = { $gt: 0 };
             }
-        }
 
-        // Find services based on the constructed query
-        services = await ServicesModel.aggregate([
-            { $match: query },  // Match the conditions
-            {
-                $project: {
-                    category: 1,
-                    subcategory: {
-                        $filter: {
-                            input: "$subcategory",  // The array of subcategories
-                            as: "subcat",
-                            cond: {
-                                $or: [
-                                    { $gt: ["$$subcat.hourlyWorker", 0] },
-                                    { $gt: ["$$subcat.dailyWageWorker", 0] },
-                                    { $gt: ["$$subcat.contractWorker", 0] }
-                                ]
+            // Find services based on the constructed query, but only return matching subcategories
+            services = await ServicesModel.aggregate([
+                { $match: query },  // Match the conditions
+                {
+                    $project: {
+                        category: 1,
+                        subcategory: {
+                            $filter: {
+                                input: "$subcategory",  // The array of subcategories
+                                as: "subcat",
+                                cond: {
+                                    $or: [
+                                        { $gt: ["$$subcat.hourlyWorker", 0] },
+                                        { $gt: ["$$subcat.dailyWageWorker", 0] },
+                                        { $gt: ["$$subcat.contractWorker", 0] }
+                                    ]
+                                }
                             }
                         }
                     }
                 }
-            }
-        ]);
-
+            ]);
+        } else {
+            // If no providerTypes is provided, return all services and subcategories
+            services = await ServicesModel.find();
+        }
 
         // Handle the case when no services are found
         if (services.length === 0) {
