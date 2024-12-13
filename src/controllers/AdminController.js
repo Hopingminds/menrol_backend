@@ -148,11 +148,33 @@ export async function verifyAdminOtp(req, res) {
 
 export async function getAllServiceProviders(req, res) {
     try {
-        const serviceproviders = await ServiceProviderModel.find();
-        if(!serviceproviders){
+        // Get pagination parameters from the query
+        const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
+        const limit = parseInt(req.query.limit) || 20; // Default to 10 users per page if not provided
+        
+        // Calculate the number of documents to skip based on page number
+        const skip = (page - 1) * limit;
+
+        const serviceproviders = await ServiceProviderModel.find().skip(skip).limit(limit);
+
+        if(!serviceproviders  || serviceproviders.length === 0){
             return res.status(404).json({ success: false, message: 'No service providers found.' });
         }
-        return res.status(200).json({ success: true, serviceproviders });
+        
+        // Count the total number of users to calculate total pages
+        const totalServiceProviders = await ServiceProviderModel.countDocuments();
+        const totalPages = Math.ceil(totalServiceProviders / limit);
+
+        return res.status(200).json({
+            success: true,
+            serviceproviders,
+            pagination: {
+                totalServiceProviders,
+                totalPages,
+                currentPage: page,
+                perPage: limit
+            }
+        });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
     }
@@ -160,11 +182,60 @@ export async function getAllServiceProviders(req, res) {
 
 export async function getAllUsers(req, res) {
     try {
-        const users = await UserModel.find();
-        if(!users){
+        // Get pagination parameters from the query
+        const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
+        const limit = parseInt(req.query.limit) || 20; // Default to 10 users per page if not provided
+
+        // Calculate the number of documents to skip based on page number
+        const skip = (page - 1) * limit;
+
+        // Fetch the users with pagination
+        const users = await UserModel.find().skip(skip).limit(limit);
+
+        if (!users || users.length === 0) {
             return res.status(404).json({ success: false, message: 'No service providers found.' });
         }
-        return res.status(200).json({ success: true, users });
+
+        // Count the total number of users to calculate total pages
+        const totalUsers = await UserModel.countDocuments();
+        const totalPages = Math.ceil(totalUsers / limit);
+
+        return res.status(200).json({
+            success: true,
+            users,
+            pagination: {
+                totalUsers,
+                totalPages,
+                currentPage: page,
+                perPage: limit
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function getServiceProvidersDetails(req, res) {
+    try {
+        const { providerID } = req.query;
+        const serviceProvider = await ServiceProviderModel.findById(providerID);
+        if(!serviceProvider){
+            return res.status(404).json({ success: false, message: 'Service provider not found' });
+        }
+        return res.status(200).json({ success: true, serviceProvider, orders: "coming soon" });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function getUserDetails(req, res) {
+    try {
+        const { UserID } = req.query;
+        const user = await UserModel.findById(UserID);
+        if(!user){
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        return res.status(200).json({ success: true, user, orders: "coming soon" });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
     }

@@ -2,8 +2,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken'
 import OtpModel from "../models/Otp.model.js";
 import ServiceProviderModel from "../models/ServiceProvider.model.js";
-import { sendOTP } from "../services/otp.service.js";
 import ServiceRequestModel from '../models/ServiceRequest.model.js';
+import ServicesModel from '../models/Services.model.js';
 
 
 /** POST: http://localhost:3027/api/v1/verifyForExistingUser
@@ -130,6 +130,45 @@ export async function completeServiceProviderDetails(req, res){
 
         if (!updatedServiceProvider) {
             return res.status(404).json({ success: false, message: "Service provider not found." });
+        }
+
+        // Save the updated subcategories to the Services collection
+        if (updateData.category && updateData.subcategory) {
+            const service = await ServicesModel.findOne({ category: updateData.category });
+
+            if (service) {
+                // Update only the counts for new subcategories added by the user
+                updateData.subcategory.forEach((newSub) => {
+                    const existingSub = service.subcategory.find(sub => sub.title === newSub.title);
+                    if (existingSub) {
+                        if (newSub.pricing && newSub.pricing.pricingtype) {
+                            switch (newSub.pricing.pricingtype) {
+                                case 'daily':
+                                    existingSub.dailyWageWorker = (existingSub.dailyWageWorker || 0) + 1;
+                                    break;
+                                case 'hourly':
+                                    existingSub.hourlyWorker = (existingSub.hourlyWorker || 0) + 1;
+                                    break;
+                                case 'contract':
+                                    existingSub.contractWorker = (existingSub.contractWorker || 0) + 1;
+                                    break;
+                            }
+                        }
+                    } else {
+                        // Add new subcategory with initial counts
+                        service.subcategory.push({
+                            ...newSub,
+                            dailyWageWorker: newSub.pricing.pricingtype === 'daily' ? 1 : 0,
+                            hourlyWorker: newSub.pricing.pricingtype === 'hourly' ? 1 : 0,
+                            contractWorker: newSub.pricing.pricingtype === 'contract' ? 1 : 0,
+                        });
+                    }
+                });
+
+                await service.save();
+            } else {
+                return res.status(404).json({ success: false, message: "Service category not found." });
+            }
         }
 
         return res.status(200).json({

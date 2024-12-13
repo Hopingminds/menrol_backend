@@ -18,6 +18,18 @@ export const ServicesSchema = new mongoose.Schema({
             from: { type: Number },
             to: { type: Number },
         },
+        dailyWageWorker:{
+            type: Number,
+            default:0
+        },
+        hourlyWorker:{
+            type: Number,
+            default:0
+        },
+        contractWorker:{
+            type: Number,
+            default:0
+        },
         image:{
             type: String,
             required: [true, "Image is required with specific dimensions."]

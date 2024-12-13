@@ -73,18 +73,64 @@ export async function createService(req, res) {
 /** GET: http://localhost:3027/api/v1/getAllServices */
 export async function getAllServices(req, res) {
     try {
-        const services = await ServicesModel.find();
-        
-        if(services.length === 0){
-            return res.status(200).json({ 
-                success: false, 
-                message: "No data found" 
+        const { providerTypes } = req.query;
+        let services;
+
+        // Prepare query to filter based on providerTypes
+        const query = {};
+
+        if (providerTypes) {
+            // If providerTypes includes "hourly", filter services where hourlyWorker > 0
+            if (providerTypes.includes("hourly")) {
+                query["subcategory.hourlyWorker"] = { $gt: 0 };
+            }
+
+            // If providerTypes includes "daily", filter services where dailyWageWorker > 0
+            if (providerTypes.includes("daily")) {
+                query["subcategory.dailyWageWorker"] = { $gt: 0 };
+            }
+
+            // If providerTypes includes "contract", filter services where contractWorker > 0
+            if (providerTypes.includes("contract")) {
+                query["subcategory.contractWorker"] = { $gt: 0 };
+            }
+        }
+
+        // Find services based on the constructed query
+        services = await ServicesModel.aggregate([
+            { $match: query },  // Match the conditions
+            {
+                $project: {
+                    category: 1,
+                    subcategory: {
+                        $filter: {
+                            input: "$subcategory",  // The array of subcategories
+                            as: "subcat",
+                            cond: {
+                                $or: [
+                                    { $gt: ["$$subcat.hourlyWorker", 0] },
+                                    { $gt: ["$$subcat.dailyWageWorker", 0] },
+                                    { $gt: ["$$subcat.contractWorker", 0] }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        ]);
+
+
+        // Handle the case when no services are found
+        if (services.length === 0) {
+            return res.status(200).json({
+                success: false,
+                message: "No data found"
             });
         }
 
-        return res.status(200).json({ 
-            success: true, 
-            data: services 
+        return res.status(200).json({
+            success: true,
+            data: services
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
