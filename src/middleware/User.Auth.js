@@ -14,6 +14,9 @@ export default async function UserAuth(req,res,next) {
         let { userID } = decodedToken
         let user = await UserModel.findById(userID).select('+authToken')
         if (user.authToken === token) {
+            if(user.isAccountBlocked){
+                return res.status(403).json({ success: false, message: 'User has been blocked' });
+            }
             req.user = decodedToken;
             next()
         } else{

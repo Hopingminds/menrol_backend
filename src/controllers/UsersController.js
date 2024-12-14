@@ -31,6 +31,9 @@ export async function verifyUserOtp(req, res) {
         if (!user) {
             user = await UserModel.create({ phone });
         }
+        else if(user.isAccountBlocked){
+            return res.status(403).json({ success: false, message: 'ServiceProvider has been blocked' });
+        }
 
         // Generate JWT token for new user
         const token = jwt.sign(

@@ -1,12 +1,12 @@
 import mongoose from "mongoose";
 
 export const UserSchema = new mongoose.Schema({
-    name:{
+    name: {
         type: String,
     },
     password: {
         type: String,
-        required : [false, "Password is required."],
+        required: [false, "Password is required."],
     },
     email: {
         type: String,
@@ -15,18 +15,22 @@ export const UserSchema = new mongoose.Schema({
         type: Number,
         unique: true,
     },
-    profileImage:{
+    profileImage: {
         type: String
     },
-    authToken:{
-        type:String,
+    authToken: {
+        type: String,
         select: false
+    },
+    isAccountBlocked: {
+        type: Boolean,
+        default: false,
     },
     perferredLanguage: {
         type: String,
         enum: ["English", "Hindi"],
         default: "English",
     }
-},{ timestamps: true });
+}, { timestamps: true });
 
 export default mongoose.model.Users || mongoose.model('User', UserSchema);

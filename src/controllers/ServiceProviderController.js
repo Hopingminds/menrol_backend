@@ -80,7 +80,7 @@ export async function verifyServiceProviderOtp(req, res) {
         if (!serviceProvider) {
             serviceProvider = await ServiceProviderModel.create({ phone });
         }
-        else if(user.isAccountBlocked){
+        else if(serviceProvider.isAccountBlocked){
             return res.status(403).json({ success: false, message: 'ServiceProvider has been blocked' });
         }
 
