@@ -49,7 +49,8 @@ export async function createService(req, res) {
             category,
             subcategory: subcategories.map((subcategory, index) => ({
                 title: subcategory.title,
-                image: subcategoryImageUrls[index] || null // Save the subcategory image URLs
+                image: subcategoryImageUrls[index] || null, // Save the subcategory image URLs
+                pricing: subcategory.pricing
             }))
         });
 
