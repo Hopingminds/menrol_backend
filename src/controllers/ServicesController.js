@@ -391,3 +391,51 @@ export async function addCategoryImage(req, res) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
     }
 }
+
+export async function editServiceData(req, res) {
+    try {
+        const { serviceID, category, subcategory } = req.body;
+
+        if(!serviceID){
+            return res.status(404).json({ success: false, message: "serviceID is required" });
+        }
+        
+        if(!category && !subcategory){
+            return res.status(404).json({ success: false, message: "category, subcategory is required" });
+        }
+
+        // Check if the service exists
+        const service = await ServicesModel.findById(serviceID);
+        if (!service) {
+            return res.status(404).json({ success: false, message: "Service not found" });
+        }
+
+        // Update category if provided
+        if (category) {
+            service.category = category;
+        }
+
+        // Update subcategory fields specifically if provided
+        if (subcategory) {
+            subcategory.forEach((sub, index) => {
+                if (service.subcategory[index]) {
+                    if (sub.title) service.subcategory[index].title = sub.title;
+                    if (sub.pricing) service.subcategory[index].pricing = sub.pricing;
+                } else {
+                    service.subcategory.push(sub);
+                }
+            });
+        }
+
+        // Save the updated service document
+        const updatedService = await service.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Service updated successfully",
+            data: updatedService,
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+    }
+}

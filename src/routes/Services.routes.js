@@ -3,20 +3,22 @@ const router = Router()
 
 import * as ServicesController from '../controllers/ServicesController.js'
 import { uploadCategoryImage, uploadSubCategoryImage } from '../services/aws.service.js';
+import AdminAuth from '../middleware/Admin.Auth.js';
 
 // POST ROUTES
-router.route('/createService').post(uploadSubCategoryImage.array('subcategoryImages', 10), ServicesController.createService);
+router.route('/createService').post(AdminAuth, uploadSubCategoryImage.array('subcategoryImages', 10), ServicesController.createService);
 
 // GET ROUTES
 router.route('/getServices').get(ServicesController.getServices);
 router.route('/getAllServices').get(ServicesController.getAllServices);
 
 // PUT ROUTES
-router.route('/addSubCategory').put(uploadSubCategoryImage.array('subcategoryImages', 10), ServicesController.addSubCategory);
-router.route('/addCategoryImage').put(uploadCategoryImage.single('categoryImage'), ServicesController.addCategoryImage);
+router.route('/editServiceData').put(AdminAuth, ServicesController.editServiceData);
+router.route('/addSubCategory').put(AdminAuth, uploadSubCategoryImage.array('subcategoryImages', 10), ServicesController.addSubCategory);
+router.route('/addCategoryImage').put(AdminAuth, uploadCategoryImage.single('categoryImage'), ServicesController.addCategoryImage);
 
 // DELETE ROUTES
-router.route('/deleteService').delete(ServicesController.deleteService);
-router.route('/removeSubCategory').delete(ServicesController.removeSubCategory);
+router.route('/deleteService').delete(AdminAuth, ServicesController.deleteService);
+router.route('/removeSubCategory').delete(AdminAuth, ServicesController.removeSubCategory);
 
 export default router;
