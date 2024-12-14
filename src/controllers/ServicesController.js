@@ -70,8 +70,8 @@ export async function createService(req, res) {
     }
 }
 
-/** GET: http://localhost:3027/api/v1/getAllServices */
-export async function getAllServices(req, res) {
+/** GET: http://localhost:3027/api/v1/getServices */
+export async function getServices(req, res) {
     try {
         const { providerTypes } = req.query;
         let services;
@@ -155,6 +155,27 @@ export async function getAllServices(req, res) {
         return res.status(200).json({
             success: true,
             data: services
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+    }
+}
+
+/** GET: http://localhost:3027/api/v1/getAllServices */
+export async function getAllServices(req, res) {
+    try {
+        const services = await ServicesModel.find();
+        
+        if(services.length === 0){
+            return res.status(200).json({ 
+                success: false, 
+                message: "No data found" 
+            });
+        }
+
+        return res.status(200).json({ 
+            success: true, 
+            data: services 
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });

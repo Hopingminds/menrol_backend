@@ -8,6 +8,7 @@ import { uploadSubCategoryImage } from '../services/aws.service.js';
 router.route('/createService').post(uploadSubCategoryImage.array('subcategoryImages',10), ServicesController.createService);
 
 // GET ROUTES
+router.route('/getServices').get(ServicesController.getServices);
 router.route('/getAllServices').get(ServicesController.getAllServices);
 
 // PUT ROUTES
