@@ -80,6 +80,9 @@ export async function verifyServiceProviderOtp(req, res) {
         if (!serviceProvider) {
             serviceProvider = await ServiceProviderModel.create({ phone });
         }
+        else if(user.isAccountBlocked){
+            return res.status(403).json({ success: false, message: 'ServiceProvider has been blocked' });
+        }
 
         // Generate JWT token for new user
         const token = jwt.sign(

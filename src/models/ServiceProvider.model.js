@@ -23,6 +23,10 @@ export const ServiceProviderSchema = new mongoose.Schema({
         type:Boolean,
         default:false
     },
+    isAccountBlocked: {
+        type: Boolean,
+        default: false,
+    },
     profileImage: { type: String },
     bio: {
         type: String,

@@ -15,6 +15,9 @@ export default async function SPAuth(req,res,next) {
         let { userID } = decodedToken
         let user = await ServiceProviderModel.findById(userID).select('+authToken')
         if (user.authToken === token) {
+            if(user.isAccountBlocked){
+                return res.status(403).json({ success: false, message: 'ServiceProvider has been blocked' });
+            }
             req.sp = decodedToken;
             next()
         } else{

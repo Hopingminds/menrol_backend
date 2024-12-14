@@ -240,3 +240,113 @@ export async function getUserDetails(req, res) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
     }
 }
+
+export async function BlockServiceProviderAccount(req, res) {
+    try {
+        const { providerID } = req.body;
+        const serviceProvider = await ServiceProviderModel.findById(providerID);
+        if (!serviceProvider) {
+            return res.status(404).json({ success: false, message: 'Service provider not found' });
+        }
+
+        serviceProvider.isAccountBlocked = true;
+        await serviceProvider.save();
+        return res.status(200).json({ success: true, message: 'Service provider account blocked' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function UnblockServiceProviderAccount(req, res) {
+    try {
+        const { providerID } = req.body;
+        const serviceProvider = await ServiceProviderModel.findById(providerID);
+        if (!serviceProvider) {
+            return res.status(404).json({ success: false, message: 'Service provider not found' });
+        }
+
+        serviceProvider.isAccountBlocked = false;
+        await serviceProvider.save();
+        return res.status(200).json({ success: true, message: 'Service provider account UnBlocked' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function DeactivateServiceProviderAccount(req, res) {
+    try {
+        const { providerID } = req.body;
+        const serviceProvider = await ServiceProviderModel.findById(providerID);
+        if (!serviceProvider) {
+            return res.status(404).json({ success: false, message: 'Service provider not found' });
+        }
+
+        await serviceProvider.deleteOne();
+        return res.status(200).json({ success: true, message: 'Service provider Account Deleted.' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function BlockUserAccount(req, res) {
+    try {
+        const { userID } = req.body;
+        const user = await ServiceProviderModel.findById(userID);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        user.isAccountBlocked = true;
+        await user.save();
+        return res.status(200).json({ success: true, message: 'User Account Blocked' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function UnblockUserAccount(req, res) {
+    try {
+        const { userID } = req.body;
+        const user = await ServiceProviderModel.findById(userID);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        user.isAccountBlocked = false;
+        await user.save();
+        return res.status(200).json({ success: true, message: 'User Account UnBlocked' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function DeactivateUserAccount(req, res) {
+    try {
+        const { userID } = req.body;
+        const user = await ServiceProviderModel.findById(userID);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        await user.deleteOne();
+        return res.status(200).json({ success: true, message: 'User Account Deleted.' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function verifyServiceProviderAccount(req, res) {
+    try {
+        const { providerID } = req.body;
+        const serviceProvider = await ServiceProviderModel.findById(providerID);
+        if (!serviceProvider) {
+            return res.status(404).json({ success: false, message: 'Service provider not found' });
+        }
+
+        serviceProvider.isVerified = true;
+        await serviceProvider.save();
+        return res.status(200).json({ success: true, message: 'Service provider account Verified' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
