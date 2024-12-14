@@ -14,14 +14,16 @@ export const ServicesSchema = new mongoose.Schema({
             type: String,
             required: true
         },
-        pricing: {
-            pricingtype: {
-                type: String,
-                enum: ["hourly", "daily", "contract"],
-            },
-            from: { type: Number },
-            to: { type: Number },
-        },
+        pricing: [
+            {
+                pricingtype: {
+                    type: String,
+                    enum: ["hourly", "daily", "contract"],
+                },
+                from: { type: Number },
+                to: { type: Number },
+            }
+        ],
         dailyWageWorker:{
             type: Number,
             default:0
