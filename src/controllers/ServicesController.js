@@ -223,7 +223,8 @@ export async function addSubCategory(req, res) {
         // Map new subcategories with images
         const newSubcategories = subcategories.map((subcat, index) => ({
             title: subcat.title,
-            image: subcategoryImageUrls[index] || null
+            image: subcategoryImageUrls[index] || null,
+            pricing: subcat.pricing,
         }));
 
         // Add new subcategories without filtering
