@@ -353,3 +353,39 @@ export async function deleteService(req, res) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
     }
 }
+
+export async function addCategoryImage(req, res) {
+    try {
+        const { categoryId } = req.body;
+        
+        // Check if a file was uploaded
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No image file provided' });
+        }
+
+        // Find the service category by ID
+        const service = await ServicesModel.findById(categoryId);
+        if (!service) {
+            return res.status(404).json({ success: false, message: 'Service category not found' });
+        }
+
+        // If there's an existing image, delete it from AWS S3
+        if (service.categoryImage) {
+            await deleteFileFromAWS(service.categoryImage);
+        }
+
+        // Update the service category with the image path or URL
+        service.categoryImage = req.file.location; // Assuming Multer stores the file path in req.file.path
+
+        // Save the updated service category
+        await service.save();
+
+        return res.status(200).json({ 
+            success: true, 
+            message: 'Image added successfully', 
+            data: service 
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+    }
+}

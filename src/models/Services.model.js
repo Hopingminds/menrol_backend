@@ -5,6 +5,10 @@ export const ServicesSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    categoryImage:{
+        type: String,
+        default: null,
+    },
     subcategory:[{
         title:{
             type: String,

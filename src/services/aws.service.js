@@ -18,6 +18,20 @@ if (!BUCKET) {
 
 const s3 = new aws.S3();
 
+export const uploadCategoryImage = multer({
+    storage: multerS3({
+        s3: s3,
+        acl: "public-read",
+        bucket: BUCKET,
+        key: function (req, file, cb) {
+            var newFileName = Date.now() + "-" + file.originalname;
+            var fullPath = 'Services/CategoryImage/'+ newFileName;
+            cb(null, fullPath);
+        },
+        contentType: multerS3.AUTO_CONTENT_TYPE
+    })
+}); 
+
 export const uploadSubCategoryImage = multer({
     storage: multerS3({
         s3: s3,
