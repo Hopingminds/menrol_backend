@@ -11,6 +11,7 @@ router.route('/createService').post(AdminAuth, uploadSubCategoryImage.array('sub
 // GET ROUTES
 router.route('/getServices').get(ServicesController.getServices);
 router.route('/getAllServices').get(ServicesController.getAllServices);
+router.route('/getCategory').get(ServicesController.getCategory);
 
 // PUT ROUTES
 router.route('/editServiceData').put(AdminAuth, ServicesController.editServiceData);
