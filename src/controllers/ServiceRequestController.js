@@ -6,62 +6,68 @@ import ServiceProviderModel from "../models/ServiceProvider.model.js";
 export async function createServiceRequest(req, res) {
     try {
         const { userID } = req.user;
-        const {
-            service,
-            subcategory,
-            location,
-            address,
-            requestType,
-            scheduledTiming,
-            instructions,
-            workersRequirment,
-            payment,
-        } = req.body;
+        let { requestedServices, location, address, scheduledTiming, instructions } = req.body;
 
         // Validate required fields
-        if (!service ||
-            !subcategory ||
-            !location ||
-            !scheduledTiming ||
-            !address ||
-            !workersRequirment ||
-            !payment ||
-            !requestType) {
+        if (!requestedServices || !location || !scheduledTiming || !address) {
             return res.status(400).json({ success: false, message: "All required fields must be provided." });
         }
 
         // Check if user, service, and service provider exist
         const userExists = await UserModel.findById(userID);
-        const serviceExists = await ServicesModel.findById(service);
 
         if (!userExists) {
             return res.status(404).json({ success: false, message: "User not found." });
         }
 
-        if (!serviceExists) {
-            return res.status(404).json({ success: false, message: "Service not found." });
+        const parsedrequestedServices = JSON.parse(requestedServices);
+        // Validate and check each service in requestedServices
+        for (const request of parsedrequestedServices) {
+            const { service, subcategory } = request;
+            
+            if (!service || !subcategory) {
+                return res.status(400).json({ success: false, message: "Each service and subcategory must be provided." });
+            }
+
+            const serviceExists = await ServicesModel.findById(service);
+            if (!serviceExists) {
+                return res.status(404).json({ success: false, message: `Service with ID ${service} not found.` });
+            }
+            
+            for (const sub of subcategory) {
+                if (!sub.title || !sub.requestType || !sub.workersRequirment) {
+                    return res.status(400).json({ success: false, message: "Subcategory fields are missing or incomplete." });
+                }
+
+                // Verify the subcategory exists in the service's subcategories
+                const subcategoryExists = serviceExists.subcategory.some(
+                    (serviceSub) => serviceSub.title === sub.title
+                );
+
+                if (!subcategoryExists) {
+                    return res.status(404).json({
+                        success: false,
+                        message: `Subcategory '${sub.title}' not found in service with ID ${service}.`,
+                    });
+                }
+            }
         }
 
         // Handle images from middleware
-        const instImages = req.files.map(file => file.location);
-        const parsedsubcategory = JSON.parse(subcategory);
-        const parsedlocation = JSON.parse(location);
-        const parsedpayment = JSON.parse(payment);
-        const parsedscheduledTiming = JSON.parse(scheduledTiming);
+        const instImages = req.files?.map(file => file.location) || [];
+        const parsedLocation = JSON.parse(location);
+        const parsedScheduledTiming = JSON.parse(scheduledTiming);
+        requestedServices = parsedrequestedServices;
         
         // Create the service request
         const serviceRequest = new ServiceRequestModel({
             user: userID,
-            service,
-            subcategory: parsedsubcategory,
-            requestType,
-            workersRequirment,
-            payment: parsedpayment,
-            location: parsedlocation,
+            requestedServices,
+            location: parsedLocation,
             address,
-            scheduledTiming: parsedscheduledTiming,
+            scheduledTiming: parsedScheduledTiming,
             instructions: instructions || null,
-            images: instImages || [],
+            images: instImages,
         });
 
         // Save the service request to the database

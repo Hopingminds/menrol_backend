@@ -6,14 +6,37 @@ const ServiceRequestSchema = new mongoose.Schema({
         ref: 'User',
         required: true,
     },
-    service: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Services',
-        required: true,
-    },
-    subcategory: [{
-        type: String,
-        required: true,
+    requestedServices: [{
+        service: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Services',
+            required: true,
+        },
+        subcategory: [{
+            subcategoryId: {
+                type: mongoose.Schema.Types.ObjectId,
+                auto: true,
+                required: true
+            },
+            title: {
+                type: String,
+                required: true,
+            },
+            requestType: {
+                type: String,
+                enum: ["hourly", "daily", "contract"],
+                default: "daily",
+            },
+            workersRequirment: {
+                type: Number,
+                default: 1,
+            },
+            status: {
+                type: String,
+                enum: ['pending', 'confirmed', 'cancelled'],
+                default: 'pending',
+            },
+        }],
     }],
     orderDate: {
         type: Date,
@@ -59,7 +82,7 @@ const ServiceRequestSchema = new mongoose.Schema({
         default: 'pending',
     },
     payment: {
-        amount: { type: Number, required: true }, // The total amount to be paid.
+        amount: { type: Number, default: 0 }, // The total amount to be paid.
         paidAmount: { type: Number, default: 0 }, // Amount paid so far.
         dueAmount: { type: Number, default: 0 },  // Amount still to be paid.
         status: { 
