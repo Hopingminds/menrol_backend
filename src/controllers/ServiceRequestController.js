@@ -84,6 +84,102 @@ export async function createServiceRequest(req, res) {
     }
 }
 
+export async function addServiceRequest(req, res) {
+    try {
+        const { userID } = req.user;
+        let { service, subcategory, location, address } = req.body;
+
+        // Validate required fields
+        if (!service || !subcategory || !location || !address) {
+            return res.status(400).json({ success: false, message: "All required fields must be provided." });
+        }
+        
+        
+        // Check if a service request already exists for the user
+        let existingRequest = await ServiceRequestModel.findOne({ user: userID, address });
+        
+        const instImages = req.files?.map(file => file.location) || [];
+        
+        const parsedsubcategory = JSON.parse(subcategory);
+        subcategory = parsedsubcategory;
+        const parsedlocation = JSON.parse(location);
+        location = parsedlocation;
+        
+        
+        const subcategoryEntry = {
+            subcategoryId: subcategory.subcategoryId,
+            title: subcategory.title,
+            requestType: subcategory.requestType || "daily",
+            workersRequirment: subcategory.workersRequirment || 1,
+            status: "pending",
+            instructions: subcategory.instructions || null,
+            instructionsImages: instImages || [],
+            scheduledTiming: {
+                startTime: new Date(subcategory.scheduledTiming.startTime),
+                endTime: subcategory.scheduledTiming.endTime ? new Date(subcategory.scheduledTiming.endTime) : null,
+            },
+        };
+
+        // If there is an existing request, check if the subcategoryId already exists
+        if (existingRequest) {
+            // Check if the subcategoryId is already in the requestedServices
+            const subcategoryExists = existingRequest.requestedServices.some(
+                (serviceRequest) =>
+                    serviceRequest.subcategory.some(
+                        (subcat) => subcat.subcategoryId.toString() === subcategory.subcategoryId.toString()
+                    )
+            );
+
+            if (subcategoryExists) {
+                return res.status(400).json({
+                    success: false,
+                    message: "This subcategory has already been requested for the given address.",
+                });
+            }
+
+            // If not, push the new subcategory to the requestedServices
+            existingRequest.requestedServices.push({
+                service: service,
+                subcategory: [subcategoryEntry],
+            });
+
+            await existingRequest.save();
+            return res.status(200).json({
+                success: true,
+                message: "Service request updated successfully.",
+                data: existingRequest,
+            });
+        }
+
+        // If no existing request, create a new service request
+        const newServiceRequest = new ServiceRequestModel({
+            user: userID,
+            requestedServices: [
+                {
+                    service: service,
+                    subcategory: [subcategoryEntry],
+                },
+            ],
+            location: {
+                type: location.type,
+                coordinates: location.coordinates,
+            },
+            address,
+        });
+
+        await newServiceRequest.save();
+
+        return res.status(201).json({
+            success: true,
+            message: "Service request added successfully.",
+            data: newServiceRequest,
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+    }
+}
+
 export async function acceptServiceRequest(req, res) {
     try {
         const { userID } = req.sp;
@@ -120,6 +216,25 @@ export async function acceptServiceRequest(req, res) {
             message: "Service request accepted successfully.",
             data: updatedRequest
         });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
+    }
+}
+
+export async function getUserServiceRequests(req, res) {
+    try {
+        // Assuming you have a ServiceRequest model to query from MongoDB
+        const { userID } = req.user; // Or use req.user._id if you're authenticating via middleware
+
+        // Fetch service requests for the user
+        const serviceRequests = await ServiceRequestModel.find({ user: userID });
+
+        if (!serviceRequests) {
+            return res.status(404).json({ success: false, message: "No service requests found for this user" });
+        }
+
+        return res.status(200).json({ success: true, serviceRequests });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });

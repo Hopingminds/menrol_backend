@@ -15,7 +15,6 @@ const ServiceRequestSchema = new mongoose.Schema({
         subcategory: [{
             subcategoryId: {
                 type: mongoose.Schema.Types.ObjectId,
-                auto: true,
                 required: true
             },
             title: {
@@ -35,6 +34,24 @@ const ServiceRequestSchema = new mongoose.Schema({
                 type: String,
                 enum: ['pending', 'confirmed', 'cancelled'],
                 default: 'pending',
+            },
+            instructions: {
+                type: String,
+                default: null,
+            },
+            instructionsImages: [{
+                type: String,
+                default: null,
+            }],
+            scheduledTiming: {
+                startTime: {
+                    type: Date, // DateTime for the start of the appointment
+                    required: true,
+                },
+                endTime: {
+                    type: Date, // DateTime for the start of the appointment
+                    default: null,
+                },
             },
         }],
     }],
@@ -57,30 +74,6 @@ const ServiceRequestSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    requestType:{
-        type: String,
-        enum: ["hourly", "daily", "contract"],
-        default: "daily",
-    },
-    scheduledTiming: {
-        startTime: {
-            type: Date, // DateTime for the start of the appointment
-            required: true,
-        },
-        endTime: {
-            type: Date, // DateTime for the start of the appointment
-            default: null,
-        },
-    },
-    workersRequirment: {
-        type: Number,
-        default: 1,
-    },
-    status: {
-        type: String,
-        enum: ['pending', 'confirmed', 'cancelled'],
-        default: 'pending',
-    },
     payment: {
         amount: { type: Number, default: 0 }, // The total amount to be paid.
         paidAmount: { type: Number, default: 0 }, // Amount paid so far.
@@ -98,14 +91,6 @@ const ServiceRequestSchema = new mongoose.Schema({
         },
         paymentDate: { type: Date, default: null }, // The date when the payment was made.
     },
-    instructions: {
-        type: String,
-        default: null,
-    },
-    images: [{
-        type: String,
-        default: null,
-    }],
 }, { timestamps: true });
 
 ServiceRequestSchema.index({ location: '2dsphere' });
