@@ -102,3 +102,18 @@ export async function deleteFileFromAWS(filename) {
         return false
     }
 }
+
+
+export const uploadUserProfileImage = multer({
+    storage: multerS3({
+        s3: s3,
+        acl: "public-read",
+        bucket: BUCKET,
+        key: function (req, file, cb) {
+            var newFileName = Date.now() + "-" + file.originalname;
+            var fullPath = 'Users/ProfileImages/'+ newFileName;
+            cb(null, fullPath);
+        },
+        contentType: multerS3.AUTO_CONTENT_TYPE
+    })
+});
