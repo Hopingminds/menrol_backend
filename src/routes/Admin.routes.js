@@ -19,6 +19,8 @@ router.route('/verifyServiceProviderAccount').post(AdminAuth, AdminController.ve
 // GET ROUTES   
 router.route('/getAllServiceProviders').get(AdminAuth, AdminController.getAllServiceProviders);
 router.route('/getAllUsers').get(AdminAuth, AdminController.getAllUsers);
+router.route('/getServiceProvidersDetails').get(AdminAuth, AdminController.getServiceProvidersDetails);
+router.route('/getUserDetails').get(AdminAuth, AdminController.getUserDetails);
 
 // PUT ROUTES
 
