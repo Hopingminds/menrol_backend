@@ -491,3 +491,30 @@ export async function getCategory(req, res) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
     }
 }
+
+export async function getSubcategory(req, res) {
+    try {
+        const { categoryId, subcategoryId } = req.query;
+
+        if(!categoryId || !subcategoryId){
+            return res.status(404).json({ success: false, message: "categoryId, subcategoryId is required"});
+        }
+
+        const category = await ServicesModel.findById(categoryId);
+        if (!category) {
+            return res.status(404).json({ success: false, message: "Category not found" });
+        }
+
+        // Search for the subcategory within the category's subcategory array
+        const subcategory = category.subcategory.id(subcategoryId);
+
+        if (!subcategory) {
+            return res.status(404).json({ success: false, message: "Subcategory not found" });
+        }
+
+        // Return the found subcategory
+        return res.status(200).json({ success: true, data: subcategory });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+    }
+}
