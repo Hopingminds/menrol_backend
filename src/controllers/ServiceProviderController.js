@@ -78,7 +78,13 @@ export async function verifyServiceProviderOtp(req, res) {
         // Create new service provider
         let serviceProvider = await ServiceProviderModel.findOne({ phone });
         if (!serviceProvider) {
-            serviceProvider = await ServiceProviderModel.create({ phone });
+            serviceProvider = await ServiceProviderModel.create({ 
+                phone,
+                location: {
+                    type: 'Point',
+                    coordinates: [0, 0], // Default coordinates (longitude, latitude)
+                }            
+            });
         }
         else if(serviceProvider.isAccountBlocked){
             return res.status(403).json({ success: false, message: 'ServiceProvider has been blocked' });
