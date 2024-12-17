@@ -39,6 +39,7 @@ export const ServiceProviderSchema = new mongoose.Schema({
         },
         coordinates: {
             type: [Number], // [longitude, latitude]
+            default: [0,0],
         }
     },
     rating: { type: Number, max: 5 },
