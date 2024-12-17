@@ -17,6 +17,7 @@ router.route('/getUser').get(UserAuth, UsersController.getUser);
 
 // PUT ROUTES
 router.route('/uploadUserProfile').put(UserAuth, uploadUserProfileImage.single('profile'), UsersController.uploadUserProfile);
+router.route('/editUserProfile').put(UserAuth, UsersController.editUserProfile);
 
 // DELETE ROUTES
 

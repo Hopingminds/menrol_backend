@@ -114,11 +114,23 @@ export async function getUser(req, res) {
     }
 }
 
+const validateEmail = (email) => {
+    return String(email)
+        .toLowerCase()
+        .match(
+            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+    );
+};
+
 export async function editUserProfile(req, res) {
     try {
         const { userID } = req.user;
         const { name, email, dob } = req.body;
         
+        if(email && !validateEmail(email)){
+            return res.status(404).json({ success: false, message: "Invalid Email." });
+        }
+
         const user = await UserModel.findById(userID);
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found." });
