@@ -291,7 +291,7 @@ export async function DeactivateServiceProviderAccount(req, res) {
 export async function BlockUserAccount(req, res) {
     try {
         const { userID } = req.body;
-        const user = await ServiceProviderModel.findById(userID);
+        const user = await UserModel.findById(userID);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
@@ -307,7 +307,7 @@ export async function BlockUserAccount(req, res) {
 export async function UnblockUserAccount(req, res) {
     try {
         const { userID } = req.body;
-        const user = await ServiceProviderModel.findById(userID);
+        const user = await UserModel.findById(userID);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
@@ -323,7 +323,7 @@ export async function UnblockUserAccount(req, res) {
 export async function DeactivateUserAccount(req, res) {
     try {
         const { userID } = req.body;
-        const user = await ServiceProviderModel.findById(userID);
+        const user = await UserModel.findById(userID);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
