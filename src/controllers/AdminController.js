@@ -65,7 +65,7 @@ export async function loginWithEmailFirstStep(req, res) {
             return res.status(500).json({ success: false, message: 'email and password are required.' });
         }
 
-        const admin = await AdminModel.findOne({email});
+        const admin = await AdminModel.findOne({email}).select('+password');
         if (!admin) {
             return res.status(404).json({ success: false, message: 'Admin not found.' })
         }
