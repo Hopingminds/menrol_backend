@@ -13,6 +13,8 @@ router.route('/getServices').get(ServicesController.getServices);
 router.route('/getAllServices').get(ServicesController.getAllServices);
 router.route('/getCategory').get(ServicesController.getCategory);
 router.route('/getSubcategory').get(ServicesController.getSubcategory);
+router.route('/searchCategory').get(ServicesController.searchCategory);
+router.route('/searchSubCategory').get(ServicesController.searchSubCategoryInCategory);
 
 // PUT ROUTES
 router.route('/editServiceData').put(AdminAuth, ServicesController.editServiceData);

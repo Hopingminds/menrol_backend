@@ -518,3 +518,47 @@ export async function getSubcategory(req, res) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
     }
 }
+
+export async function searchCategory(req, res) {
+    try {
+        const { service } = req.query;
+        const categories = await ServicesModel.find({ category: { $regex: `^${service}`, $options: 'i' } });
+        return res.status(200).json({ success: true, data: categories });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function searchSubCategoryInCategory(req, res) {
+    try {
+        const { category, subcategory } = req.query;
+
+        // Validate the category parameter
+        if (!category) {
+            return res.status(400).json({ success: false, message: 'Category query parameter is required.' });
+        }
+
+        // Build the query dynamically
+        const query = { category: { $regex: `^${category}`, $options: 'i' } };
+
+        // Find the category with optional subcategory filtering
+        const categories = await ServicesModel.find({ category: category });
+
+        // If subcategory filtering is needed
+        let filteredCategories = categories;
+
+        if (subcategory) {
+            filteredCategories = categories.map(cat => ({
+                ...cat._doc,
+                subcategory: cat.subcategory.filter(sub =>
+                    sub.title.toLowerCase().includes(subcategory.toLowerCase())
+                ),
+            })).filter(cat => cat.subcategory.length > 0); // Exclude categories without matching subcategories
+        }
+
+        // Return response
+        return res.status(200).json({ success: true, data: filteredCategories });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
