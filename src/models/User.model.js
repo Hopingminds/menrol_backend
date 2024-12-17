@@ -27,6 +27,25 @@ export const UserSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    dob: {
+        type: Date,
+    },
+    SavedAddresses: [{
+        location: {
+            type: {
+                type: String,
+                enum: ['Point'],
+                default: 'Point',
+            },
+            coordinates: {
+                type: [Number], // [longitude, latitude]
+                required: true,
+            }
+        },
+        address: {
+            type: String
+        }
+    }],
     perferredLanguage: {
         type: String,
         enum: ["English", "Hindi"],

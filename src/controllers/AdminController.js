@@ -39,6 +39,7 @@ export async function registerAdmin(req, res) {
                 adminID: savedAdmin._id,
                 email: savedAdmin.email,
                 mobile: savedAdmin.phone,
+                role: 'admin'
             },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
@@ -126,6 +127,7 @@ export async function verifyAdminOtp(req, res) {
                 adminID: admin._id,
                 email: admin.email,
                 mobile: admin.phone,
+                role: 'admin'
             },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }

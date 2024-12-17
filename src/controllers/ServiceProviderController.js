@@ -88,7 +88,8 @@ export async function verifyServiceProviderOtp(req, res) {
         const token = jwt.sign(
             { 
                 userID: serviceProvider._id,
-                phone: serviceProvider.phone
+                phone: serviceProvider.phone,
+                role: 'serviceProvider'
             }, 
             process.env.JWT_SECRET, 
             { expiresIn: '7d' }

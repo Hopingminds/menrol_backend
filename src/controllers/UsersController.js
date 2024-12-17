@@ -39,7 +39,8 @@ export async function verifyUserOtp(req, res) {
         const token = jwt.sign(
             { 
                 userID: user._id,
-                phone: user.phone
+                phone: user.phone,
+                role: 'user'
             }, 
             process.env.JWT_SECRET, 
             { expiresIn: '7d' }
@@ -107,6 +108,28 @@ export async function getUser(req, res) {
         }
 
         return res.status(200).json({ success: false, user });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+    }
+}
+
+export async function editUserProfile(req, res) {
+    try {
+        const { userID } = req.user;
+        const { name, email, dob } = req.body;
+        
+        const user = await UserModel.findById(userID);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found." });
+        }
+        user.name = user.name || name;
+        user.email = user.email || email;
+        user.dob = user.dob || dob;
+
+        await user.save();
+
+        return res.status(201).json({ success: true, message: "User profile updated successfully.", data: user });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
