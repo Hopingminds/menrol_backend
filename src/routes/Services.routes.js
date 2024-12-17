@@ -15,6 +15,7 @@ router.route('/getCategory').get(ServicesController.getCategory);
 
 // PUT ROUTES
 router.route('/editServiceData').put(AdminAuth, ServicesController.editServiceData);
+router.route('/editServiceSubCategory').put(AdminAuth, ServicesController.editServiceSubCategory);
 router.route('/addSubCategory').put(AdminAuth, uploadSubCategoryImage.array('subcategoryImages', 10), ServicesController.addSubCategory);
 router.route('/addCategoryImage').put(AdminAuth, uploadCategoryImage.single('categoryImage'), ServicesController.addCategoryImage);
 
