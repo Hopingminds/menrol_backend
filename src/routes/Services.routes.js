@@ -15,6 +15,7 @@ router.route('/getCategory').get(ServicesController.getCategory);
 router.route('/getSubcategory').get(ServicesController.getSubcategory);
 router.route('/searchCategory').get(ServicesController.searchCategory);
 router.route('/searchSubCategory').get(ServicesController.searchSubCategoryInCategory);
+router.route('/searchSubCategoryInAllCategories').get(ServicesController.searchSubCategoryInAllCategories);
 
 // PUT ROUTES
 router.route('/editServiceData').put(AdminAuth, ServicesController.editServiceData);

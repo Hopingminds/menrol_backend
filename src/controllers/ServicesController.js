@@ -562,3 +562,41 @@ export async function searchSubCategoryInCategory(req, res) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
     }
 }
+
+export async function searchSubCategoryInAllCategories(req, res) {
+    try {
+        const { subcategory } = req.query;
+
+        // Build the projection to return only necessary fields
+        const projection = {
+            _id: 1,
+            category: 1,
+            'subcategory.title': 1,
+            'subcategory.pricing': 1,
+            'subcategory.dailyWageWorker': 1,
+            'subcategory.hourlyWorker': 1,
+            'subcategory.contractWorker': 1,
+            'subcategory.image': 1,
+        };
+
+        // Fetch all categories
+        const categories = await ServicesModel.find({}, projection);
+
+        let filteredCategories = categories;
+
+        // If subcategory filtering is needed
+        if (subcategory) {
+            filteredCategories = categories.map(cat => ({
+                ...cat._doc,
+                subcategory: cat.subcategory.filter(sub =>
+                    sub.title.toLowerCase().includes(subcategory.toLowerCase())
+                ),
+            })).filter(cat => cat.subcategory.length > 0); // Exclude categories without matching subcategories
+        }
+
+        // Return response
+        return res.status(200).json({ success: true, data: filteredCategories });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
