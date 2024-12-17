@@ -17,6 +17,7 @@ router.route('/DeactivateUserAccount').post(AdminAuth, AdminController.Deactivat
 router.route('/verifyServiceProviderAccount').post(AdminAuth, AdminController.verifyServiceProviderAccount);
 
 // GET ROUTES   
+router.route('/getAdminDetails').get(AdminAuth, AdminController.getAdminDetails);
 router.route('/getAllServiceProviders').get(AdminAuth, AdminController.getAllServiceProviders);
 router.route('/getAllUsers').get(AdminAuth, AdminController.getAllUsers);
 router.route('/getServiceProvidersDetails').get(AdminAuth, AdminController.getServiceProvidersDetails);

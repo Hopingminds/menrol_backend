@@ -7,6 +7,7 @@ export const AdminSchema = new mongoose.Schema({
     password: {
         type: String,
         required : [false, "Password is required."],
+        select: false,
     },
     email: {
         type: String,
