@@ -135,9 +135,9 @@ export async function editUserProfile(req, res) {
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found." });
         }
-        user.name = user.name || name;
-        user.email = user.email || email;
-        user.dob = user.dob || dob;
+        user.name = name || user.name;
+        user.email = email || user.email;
+        user.dob = dob || user.dob;
 
         await user.save();
 
@@ -145,5 +145,123 @@ export async function editUserProfile(req, res) {
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+    }
+}
+
+export async function addUserAddress(req, res) {
+    try {
+        const { userID } = req.user;
+        const { coordinates, address } = req.body;
+
+        // Validate required fields
+        if (!coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
+            return res.status(400).json({ success: false, message: 'Invalid coordinates. Please provide [longitude, latitude].' });
+        }
+
+        if (!address) {
+            return res.status(400).json({ success: false, message: 'Address is required.' });
+        }
+
+        // Find user by ID
+        const user = await UserModel.findById(userID);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        // Add the new address to the SavedAddresses array
+        user.SavedAddresses.push({
+            location: {
+                type: 'Point',
+                coordinates,
+            },
+            address,
+        });
+
+        // Save the updated user document
+        await user.save();
+
+        return res.status(200).json({ success: true, message: 'Address added successfully.', user });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+    }
+}
+
+export async function updateUserAddress(req, res) {
+    try {
+        const { userID } = req.user; // Assuming req.user contains userID after authentication
+        const { index, coordinates, address } = req.body;
+
+        // Validate the index
+        if (index === undefined || index < 0) {
+            return res.status(400).json({ success: false, message: 'Invalid index. Please provide a valid index.' });
+        }
+
+        // Validate coordinates if provided
+        if (coordinates && (!Array.isArray(coordinates) || coordinates.length !== 2)) {
+            return res.status(400).json({ success: false, message: 'Invalid coordinates. Please provide [longitude, latitude].' });
+        }
+
+        // Find user by ID
+        const user = await UserModel.findById(userID);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        // Check if the index is within bounds
+        if (index >= user.SavedAddresses.length) {
+            return res.status(400).json({ success: false, message: 'Invalid index. Address not found.' });
+        }
+
+        // Update the address fields if provided
+        if (coordinates) {
+            user.SavedAddresses[index].location.coordinates = coordinates;
+        }
+
+        if (address) {
+            user.SavedAddresses[index].address = address;
+        }
+
+        // Save the updated user document
+        await user.save();
+
+        return res.status(200).json({ success: true, message: 'Address updated successfully.', user });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function deleteUserAddress(req, res) {
+    try {
+        const { userID } = req.user; // Assuming req.user contains userID after authentication
+        const { index } = req.body;
+
+        // Validate the index
+        if (index === undefined || index < 0) {
+            return res.status(400).json({ success: false, message: 'Invalid index. Please provide a valid index.' });
+        }
+
+        // Find user by ID
+        const user = await UserModel.findById(userID);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        // Check if the index is within bounds
+        if (index >= user.SavedAddresses.length) {
+            return res.status(400).json({ success: false, message: 'Invalid index. Address not found.' });
+        }
+
+        // Remove the address at the specified index
+        user.SavedAddresses.splice(index, 1);
+
+        // Save the updated user document
+        await user.save();
+
+        return res.status(200).json({ success: true, message: 'Address deleted successfully.', user });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
     }
 }
