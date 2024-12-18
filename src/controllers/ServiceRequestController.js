@@ -3,7 +3,7 @@ import ServicesModel from "../models/Services.model.js";
 import ServiceRequestModel from "../models/ServiceRequest.model.js";
 import ServiceProviderModel from "../models/ServiceProvider.model.js";
 
-export async function createServiceRequest(req, res) {
+export async function createServiceRequest(req, res) { //NOT IN USE UPDATE IT BEFORE USING
     try {
         const { userID } = req.user;
         let { requestedServices, location, address, scheduledTiming, instructions } = req.body;
@@ -110,6 +110,7 @@ export async function addServiceRequest(req, res) {
             subcategoryId: subcategory.subcategoryId,
             title: subcategory.title,
             requestType: subcategory.requestType || "daily",
+            selectedAmount: subcategory.selectedAmount,
             workersRequirment: subcategory.workersRequirment || 1,
             status: "pending",
             instructions: subcategory.instructions || null,

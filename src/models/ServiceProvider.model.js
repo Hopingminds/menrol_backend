@@ -76,14 +76,14 @@ export const ServiceProviderSchema = new mongoose.Schema({
         title: {
             type: String
         },
-        pricing: {
+        pricing: [{
             pricingtype: {
                 type: String,
                 enum: ["hourly", "daily", "contract"],
             },
             from: { type: Number },
             to: { type: Number },
-        },
+        }],
     }],
     languagesSpoken: {
         type: [String],

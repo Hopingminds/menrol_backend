@@ -26,6 +26,10 @@ const ServiceRequestSchema = new mongoose.Schema({
                 enum: ["hourly", "daily", "contract"],
                 default: "daily",
             },
+            selectedAmount:{
+                type: Number,
+                required: true,
+            },
             workersRequirment: {
                 type: Number,
                 default: 1,
