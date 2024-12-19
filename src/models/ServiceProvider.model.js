@@ -19,6 +19,10 @@ export const ServiceProviderSchema = new mongoose.Schema({
         type:String,
         select: false
     },
+    newUser:{
+        type:Boolean,
+        default:true
+    },
     isProfileComplete:{
         type:Boolean,
         default:false
@@ -115,6 +119,15 @@ export const ServiceProviderSchema = new mongoose.Schema({
             },
         },
     ],
+    aadharCard:{
+        Image:{
+            type: String
+        },
+        aadharVerified: {
+            type: Boolean,
+            default: false,
+        },
+    },
     isVerified: {
         type: Boolean,
         default: false,

@@ -75,12 +75,10 @@ export async function verifyServiceProviderOtp(req, res) {
             return res.status(400).json({ success: false, message: 'Invalid OTP', validotp: false });
         }
 
-        let newUser = false;
         // Create new service provider
         let serviceProvider = await ServiceProviderModel.findOne({ phone });
         if (!serviceProvider) {
-            serviceProvider = await ServiceProviderModel.create({ phone });
-            newUser = true;
+            serviceProvider = await ServiceProviderModel.create({ phone, newUser: true });
         }
         else if(serviceProvider.isAccountBlocked){
             return res.status(403).json({ success: false, message: 'ServiceProvider has been blocked' });
@@ -106,7 +104,7 @@ export async function verifyServiceProviderOtp(req, res) {
             success: true,
             message: 'Service provider verified and registered successfully',
             token,
-            newUser,
+            newUser: serviceProvider.newUser,
         });
     } catch (error) {
         console.log(error);
@@ -369,7 +367,21 @@ export async function getServiceProvider(req, res) {
 
 export async function uploadServiceProviderDocuments(req, res) {
     try {
-        
+        const { userID } = req.sp;
+
+        if(!req.file){
+            return res.status(400).json({ success: false, message: "No file uploaded." });
+        }
+
+        const serviceProvider = await ServiceProviderModel.findById(userID);
+        if(!serviceProvider){
+            return res.status(404).json({ success: false, message: "Service provider not found" });
+        }
+
+        serviceProvider.aadharCard.Image = req.file.location;
+        await serviceProvider.save();
+
+        res.status(200).json({ success: true, message: "Service provider documents uploaded successfully" });
     } catch (error) {
         console.log(error.message);
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });

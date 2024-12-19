@@ -74,6 +74,20 @@ export const uploadServiceProviderWorkImage = multer({
     })
 });
 
+export const uploadServiceProviderAadharCard = multer({
+    storage: multerS3({
+        s3: s3,
+        acl: "public-read",
+        bucket: BUCKET,
+        key: function (req, file, cb) {
+            var newFileName = Date.now() + "-" + file.originalname;
+            var fullPath = 'ServiceProvider/AadharCards/'+ newFileName;
+            cb(null, fullPath);
+        },
+        contentType: multerS3.AUTO_CONTENT_TYPE
+    })
+});
+
 export const uploadServiceInstructionImage = multer({
     storage: multerS3({
         s3: s3,
@@ -102,7 +116,6 @@ export async function deleteFileFromAWS(filename) {
         return false
     }
 }
-
 
 export const uploadUserProfileImage = multer({
     storage: multerS3({
