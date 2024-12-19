@@ -11,6 +11,7 @@ router.route('/verifyServiceProviderOtp').post(ServiceProviderController.verifyS
 router.route('/acceptServiceRequest').post(SPAuth, ServiceRequestController.acceptServiceRequest);
 
 // GET ROUTES
+router.route('/getServiceProvider').get(SPAuth, ServiceProviderController.getServiceProvider);
 router.route('/getServicesRequestNearSPLocation').get(SPAuth, ServiceProviderController.getServicesRequestNearSPLocation);
 
 // PUT ROUTES

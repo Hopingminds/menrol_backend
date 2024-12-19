@@ -347,3 +347,19 @@ export async function getServicesRequestNearSPLocation(req, res) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
     }
 }
+
+export async function getServiceProvider(req, res) {
+    try {
+        const { userID } = req.sp;
+
+        const serviceProvider = await ServiceProviderModel.findById(userID);
+        if (!serviceProvider) {
+            return res.status(404).json({ success: false, message: "Service provider not found." });
+        }
+
+        res.status(200).json({ success: true, message: "Service provider retrieved successfully.", serviceProvider });
+    } catch (error) {
+        console.log(error.message);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+    }
+}
