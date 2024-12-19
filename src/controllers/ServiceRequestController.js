@@ -96,7 +96,7 @@ export async function addServiceRequest(req, res) {
         
         
         // Check if a service request already exists for the user
-        let existingRequest = await ServiceRequestModel.findOne({ user: userID, address });
+        let existingRequest = await ServiceRequestModel.findOne({ user: userID });
         
         const instImages = req.files?.map(file => file.location) || [];
         
@@ -134,7 +134,7 @@ export async function addServiceRequest(req, res) {
             if (subcategoryExists) {
                 return res.status(400).json({
                     success: false,
-                    message: "This subcategory has already been requested for the given address.",
+                    message: "This subcategory has already been requested.",
                 });
             }
 
@@ -229,13 +229,73 @@ export async function getUserServiceRequests(req, res) {
         const { userID } = req.user; // Or use req.user._id if you're authenticating via middleware
 
         // Fetch service requests for the user
-        const serviceRequests = await ServiceRequestModel.find({ user: userID });
+        const serviceRequests = await ServiceRequestModel.findOne({ user: userID });
 
         if (!serviceRequests) {
             return res.status(404).json({ success: false, message: "No service requests found for this user" });
         }
 
+        if(serviceRequests.requestedServices.length === 0){
+            await serviceRequests.deleteOne();
+            return res.status(404).json({ success: false, message: "No service requests found for this user" });
+        }
+
         return res.status(200).json({ success: true, serviceRequests });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
+    }
+}
+
+export async function removeServiceRequest(req, res) {
+    try {
+        const { userID } = req.user;
+        const { service, subcategoryId } = req.body;
+
+        if (!service || !subcategoryId) {
+            return res.status(400).json({ success: false, message: "service, subcategoryId are the required fields." });
+        }
+
+        const serviceRequest = await ServiceRequestModel.findOne({ user: userID });
+        if (!serviceRequest) {
+            return res.status(404).json({ success: false, message: "Service request not found" });
+        }
+
+        const serviceIndex = serviceRequest.requestedServices.findIndex(reqService =>
+            reqService.service.toString() === service
+        );
+
+        if (serviceIndex === -1) {
+            return res.status(404).json({ success: false, message: "Service not found in the request" });
+        }
+
+        serviceRequest.requestedServices[serviceIndex].subcategory = serviceRequest.requestedServices[serviceIndex].subcategory.filter(
+            sub => sub.subcategoryId.toString() !== subcategoryId
+        );
+
+        if (serviceRequest.requestedServices[serviceIndex].subcategory.length === 0) {
+            serviceRequest.requestedServices.splice(serviceIndex, 1);
+        }
+
+        if(serviceRequest.requestedServices.length === 0){
+            await serviceRequest.deleteOne();
+            return res.status(200).json({ success: true, message: "Service request deleted successfully, no services left" });
+        }
+
+        await serviceRequest.save();
+
+        return res.status(200).json({ success: true, message: "Service request updated successfully" });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
+    }
+}
+
+export async function updateServiceRequest(req, res) {
+    try {
+        const { userID } = req.user;
+        let { service, subcategory, location, address } = req.body;
+        
     } catch (error) {
         console.error(error);
         return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });

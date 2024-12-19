@@ -8,9 +8,9 @@ import UserAuth from '../middleware/User.Auth.js';
 
 // POST ROUTES
 router.route('/verifyUserOtp').post(UsersController.verifyUserOtp);
+router.route('/addUserAddress').post(UserAuth, UsersController.addUserAddress);
 router.route('/createServiceRequest').post(UserAuth, uploadServiceInstructionImage.array('instImages',10), ServiceRequestController.createServiceRequest);
 router.route('/addServiceRequest').post(UserAuth, uploadServiceInstructionImage.array('instImages',10), ServiceRequestController.addServiceRequest);
-router.route('/addUserAddress').post(UserAuth, UsersController.addUserAddress);
 
 // GET ROUTES
 router.route('/getUserServiceRequests').get(UserAuth, ServiceRequestController.getUserServiceRequests);
@@ -23,5 +23,6 @@ router.route('/updateUserAddress').put(UserAuth, UsersController.updateUserAddre
 
 // DELETE ROUTES
 router.route('/deleteUserAddress').delete(UserAuth, UsersController.deleteUserAddress);
+router.route('/removeServiceRequest').delete(UserAuth, ServiceRequestController.removeServiceRequest);
 
 export default router;

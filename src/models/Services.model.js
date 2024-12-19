@@ -9,10 +9,18 @@ export const ServicesSchema = new mongoose.Schema({
         type: String,
         default: null,
     },
+    categoryDescription:{
+        type: String,
+        default: null,
+    },
     subcategory:[{
         title:{
             type: String,
             required: true
+        },
+        description:{
+            type: String,
+            default: null,
         },
         pricing: [
             {

@@ -10,7 +10,7 @@ import { deleteFileFromAWS } from "../services/aws.service.js";
  */
 export async function createService(req, res) {
     try {
-        const { category, subcategory } = req.body;
+        const { category, categoryDescription, subcategory } = req.body;
 
         // Parse subcategory data only if it's a string
         const subcategories = typeof subcategory === 'string' ? JSON.parse(subcategory) : subcategory;
@@ -47,8 +47,10 @@ export async function createService(req, res) {
         // Create a new service document
         const newService = new ServicesModel({
             category,
+            categoryDescription,
             subcategory: subcategories.map((subcategory, index) => ({
                 title: subcategory.title,
+                description: subcategory.description,
                 image: subcategoryImageUrls[index] || null, // Save the subcategory image URLs
                 pricing: subcategory.pricing
             }))
@@ -223,6 +225,7 @@ export async function addSubCategory(req, res) {
         // Map new subcategories with images
         const newSubcategories = subcategories.map((subcat, index) => ({
             title: subcat.title,
+            description: subcat.description,
             image: subcategoryImageUrls[index] || null,
             pricing: subcat.pricing,
         }));
@@ -394,7 +397,7 @@ export async function addCategoryImage(req, res) {
 
 export async function editServiceData(req, res) {
     try {
-        const { serviceID, category, subcategory } = req.body;
+        const { serviceID, category, categoryDescription, subcategory } = req.body;
 
         if(!serviceID){
             return res.status(404).json({ success: false, message: "serviceID is required" });
@@ -413,6 +416,7 @@ export async function editServiceData(req, res) {
         // Update category if provided
         if (category) {
             service.category = category;
+            service.categoryDescription = categoryDescription;
         }
 
         // Update subcategory fields specifically if provided
@@ -420,6 +424,7 @@ export async function editServiceData(req, res) {
             subcategory.forEach((sub, index) => {
                 if (service.subcategory[index]) {
                     if (sub.title) service.subcategory[index].title = sub.title;
+                    if (sub.description) service.subcategory[index].description = sub.description;
                     if (sub.pricing) service.subcategory[index].pricing = sub.pricing;
                 } else {
                     service.subcategory.push(sub);
@@ -443,7 +448,7 @@ export async function editServiceData(req, res) {
 export async function editServiceSubCategory(req, res) {
     try {
         const { serviceID, subcategory } = req.body;
-        const { _id, title, pricing } = subcategory;
+        const { _id, title, description, pricing } = subcategory;
 
         const service = await ServicesModel.findById(serviceID);
         if (!service) {
@@ -463,6 +468,7 @@ export async function editServiceSubCategory(req, res) {
 
         // Update the existing subcategory fields
         existingSubcategory.title = title || existingSubcategory.title;
+        existingSubcategory.description = description || existingSubcategory.description;
         existingSubcategory.pricing = pricing || existingSubcategory.pricing;
 
         // Save the updated service document
