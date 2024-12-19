@@ -89,6 +89,9 @@ export async function addServiceRequest(req, res) {
         const { userID } = req.user;
         let { service, subcategory, location, address } = req.body;
 
+        console.log("Body => ",req.body);
+        console.log("File => ",req.files);
+        
         // Validate required fields
         if (!service || !subcategory || !location || !address) {
             return res.status(400).json({ success: false, message: "All required fields must be provided." });
