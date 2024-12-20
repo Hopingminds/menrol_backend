@@ -404,6 +404,7 @@ export async function completeServiceProviderRegistrationDetails(req, res) {
         serviceProvider.name = name;
         serviceProvider.profileImage = req.file.location;
         serviceProvider.email = email;
+        serviceProvider.newUser = false;
 
         await serviceProvider.save();
         return res.status(201).json({ success: true, message: "Registration Completed." })
