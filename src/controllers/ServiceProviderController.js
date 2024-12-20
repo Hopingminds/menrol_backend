@@ -387,3 +387,28 @@ export async function uploadServiceProviderDocuments(req, res) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
     }
 }
+
+export async function completeServiceProviderRegistrationDetails(req, res) {
+    try {
+        const { userID } = req.sp;
+        const { name, email } = req.body;
+        if(!req.file || !name){
+            return res.status(404).json({ success: false, message: "Please fill name, profile Image the fields." });
+        }
+
+        const serviceProvider = await ServiceProviderModel.findById(userID);
+        if(!serviceProvider){
+            return res.status(404).json({ success: false, message: "Service provider not found" });
+        }
+
+        serviceProvider.name = name;
+        serviceProvider.profileImage = req.file.location;
+        serviceProvider.email = email;
+
+        await serviceProvider.save();
+        return res.status(201).json({ success: true, message: "Registration Completed." })
+    } catch (error) {
+        console.log(error.message);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+    }
+}

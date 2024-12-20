@@ -15,6 +15,7 @@ router.route('/getServiceProvider').get(SPAuth, ServiceProviderController.getSer
 router.route('/getServicesRequestNearSPLocation').get(SPAuth, ServiceProviderController.getServicesRequestNearSPLocation);
 
 // PUT ROUTES
+router.route('/completeServiceProviderRegistrationDetails').put(SPAuth, uploadServiceProviderImage.single('profile'), ServiceProviderController.completeServiceProviderRegistrationDetails);
 router.route('/completeServiceProviderDetails').put(SPAuth, ServiceProviderController.completeServiceProviderDetails);
 router.route('/uploadServiceProviderProfile').put(SPAuth, uploadServiceProviderImage.single('profile'), ServiceProviderController.uploadUserProfile);
 router.route('/uploadWork').put(SPAuth, uploadServiceProviderWorkImage.array('gallery',10), ServiceProviderController.uploadWork);
