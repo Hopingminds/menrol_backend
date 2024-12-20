@@ -78,23 +78,6 @@ const ServiceRequestSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    payment: {
-        amount: { type: Number, default: 0 }, // The total amount to be paid.
-        paidAmount: { type: Number, default: 0 }, // Amount paid so far.
-        dueAmount: { type: Number, default: 0 },  // Amount still to be paid.
-        status: { 
-            type: String, 
-            enum: ['pending', 'partial', 'completed', 'failed'], 
-            default: 'pending' 
-        },
-        method: { type: String, enum: ['app', 'cash'], default: 'app' },
-        paymentType: { 
-            type: String, 
-            enum: ['upfront', 'post-service'], 
-            default: 'upfront' 
-        },
-        paymentDate: { type: Date, default: null }, // The date when the payment was made.
-    },
 }, { timestamps: true });
 
 ServiceRequestSchema.index({ location: '2dsphere' });
