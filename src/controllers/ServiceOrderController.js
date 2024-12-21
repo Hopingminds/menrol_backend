@@ -55,7 +55,51 @@ export async function getUserAllOrders(req, res) {
         if (!serviceOrders) {
             return res.status(404).json({ success: false, message: "No service orders found" });
         }
-        return res.status(200).json({ success: true, serviceOrders });
+
+        // Categorize orders by status
+        const categorizedOrders = {
+            pending: [],
+            confirmed: [],
+            cancelled: []
+        };
+
+        serviceOrders.forEach(order => {
+            const orderClone = JSON.parse(JSON.stringify(order)); // Deep copy to avoid mutating original data
+
+            // Prepare subcategories for each status
+            const statusBuckets = {
+                pending: [],
+                confirmed: [],
+                cancelled: []
+            };
+
+            order.serviceRequest.forEach(request => {
+                request.subcategory.forEach(subcat => {
+                    if (statusBuckets[subcat.status]) {
+                        statusBuckets[subcat.status].push(subcat);
+                    }
+                });
+            });
+
+            // Add the order to categorizedOrders only once per status
+            Object.keys(statusBuckets).forEach(status => {
+                if (statusBuckets[status].length > 0) {
+                    const filteredOrder = {
+                        ...orderClone,
+                        serviceRequest: orderClone.serviceRequest.map(req => ({
+                            ...req,
+                            subcategory: statusBuckets[status].filter(
+                                subcat => req.subcategory.find(sc => sc._id.toString() === subcat._id.toString())
+                            )
+                        })).filter(req => req.subcategory.length > 0) // Remove requests with no subcategories for this status
+                    };
+                    categorizedOrders[status].push(filteredOrder);
+                }
+            });
+        });
+
+
+        return res.status(200).json({ success: true, data: categorizedOrders });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
