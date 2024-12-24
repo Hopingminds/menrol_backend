@@ -61,7 +61,6 @@ export async function getUserAllOrders(req, res) {
             pending: [],
             confirmed: [],
             completed: [],
-            inProgress: [],
             cancelled: []
         };
 
@@ -73,13 +72,14 @@ export async function getUserAllOrders(req, res) {
                 pending: [],
                 confirmed: [],
                 completed: [],
-                inProgress: [],
                 cancelled: []
             };
 
             order.serviceRequest.forEach(request => {
                 request.subcategory.forEach(subcat => {
-                    if (statusBuckets[subcat.status]) {
+                    if (subcat.status === "inProgress") {
+                        statusBuckets.confirmed.push(subcat);
+                    } else if (statusBuckets[subcat.status]) {
                         statusBuckets[subcat.status].push(subcat);
                     }
                 });
