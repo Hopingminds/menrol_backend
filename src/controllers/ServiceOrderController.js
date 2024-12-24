@@ -1,5 +1,6 @@
 import ServiceOrderModel from "../models/ServiceOrder.model.js";
 import ServiceRequestModel from "../models/ServiceRequest.model.js";
+import ServicesModel from "../models/Services.model.js";
 import { getOrderValue } from "../services/order.service.js";
 
 export async function purchaseService(req, res) {
@@ -64,8 +65,14 @@ export async function getUserAllOrders(req, res) {
             cancelled: []
         };
 
-        serviceOrders.forEach(order => {
+        const allCategoriesTitles = []; // Tracks categories across all orders
+
+        // Iterate over each service order
+        for (const order of serviceOrders) {
             const orderClone = JSON.parse(JSON.stringify(order)); // Deep copy to avoid mutating original data
+
+            // Categories specific to this order
+            const orderCategoriesTitles = [];
 
             // Prepare subcategories for each status
             const statusBuckets = {
@@ -75,7 +82,23 @@ export async function getUserAllOrders(req, res) {
                 cancelled: []
             };
 
-            order.serviceRequest.forEach(request => {
+            // Iterate over each service request in the order
+            for (const request of order.serviceRequest) {
+                const service = await ServicesModel.findById(request.service);
+
+                if (service) {
+                    // Add the category to the order's categoriesTitles if not already added
+                    if (!orderCategoriesTitles.includes(service.category)) {
+                        orderCategoriesTitles.push(service.category);
+                    }
+
+                    // Add the category to the global categoriesTitles if not already added
+                    if (!allCategoriesTitles.includes(service.category)) {
+                        allCategoriesTitles.push(service.category);
+                    }
+                }
+
+                // Iterate over subcategories and categorize by status
                 request.subcategory.forEach(subcat => {
                     if (subcat.status === "inProgress") {
                         statusBuckets.confirmed.push(subcat);
@@ -83,7 +106,7 @@ export async function getUserAllOrders(req, res) {
                         statusBuckets[subcat.status].push(subcat);
                     }
                 });
-            });
+            }
 
             // Add the order to categorizedOrders only once per status
             Object.keys(statusBuckets).forEach(status => {
@@ -95,12 +118,13 @@ export async function getUserAllOrders(req, res) {
                             subcategory: statusBuckets[status].filter(
                                 subcat => req.subcategory.find(sc => sc._id.toString() === subcat._id.toString())
                             )
-                        })).filter(req => req.subcategory.length > 0) // Remove requests with no subcategories for this status
+                        })).filter(req => req.subcategory.length > 0), // Remove requests with no subcategories for this status
+                        categoriesTitles: orderCategoriesTitles // Include categories specific to this order
                     };
                     categorizedOrders[status].push(filteredOrder);
                 }
             });
-        });
+        }
 
 
         return res.status(200).json({ success: true, data: categorizedOrders });
