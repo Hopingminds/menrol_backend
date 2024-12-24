@@ -53,7 +53,12 @@ export async function getUserAllOrders(req, res) {
     try {
         const { userID } = req.user;
         
-        const serviceOrders = await ServiceOrderModel.find({ user: userID });
+        const serviceOrders = await ServiceOrderModel.find({ user: userID }).populate({
+            path: 'serviceRequest.service',
+            model: 'Services',
+            select: '-subcategory'
+        });
+        
         if (!serviceOrders) {
             return res.status(404).json({ success: false, message: "No service orders found" });
         }
@@ -85,7 +90,7 @@ export async function getUserAllOrders(req, res) {
 
             // Iterate over each service request in the order
             for (const request of order.serviceRequest) {
-                const service = await ServicesModel.findById(request.service);
+                const service = await ServicesModel.findById(request.service._id);
 
                 if (service) {
                     // Add the category to the order's categoriesTitles if not already added
