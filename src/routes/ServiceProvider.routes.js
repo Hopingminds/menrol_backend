@@ -9,6 +9,7 @@ import SPAuth from '../middleware/ServiceProvide.Auth.js';
 // POST ROUTES
 router.route('/verifyServiceProviderOtp').post(ServiceProviderController.verifyServiceProviderOtp);
 router.route('/acceptServiceRequest').post(SPAuth, ServiceRequestController.acceptServiceRequest);
+router.route('/addServiceProviderSkills').post(SPAuth, ServiceProviderController.addServiceProviderSkills);
 
 // GET ROUTES
 router.route('/getServiceProvider').get(SPAuth, ServiceProviderController.getServiceProvider);
@@ -21,7 +22,9 @@ router.route('/uploadServiceProviderProfile').put(SPAuth, uploadServiceProviderI
 router.route('/uploadWork').put(SPAuth, uploadServiceProviderWorkImage.array('gallery',10), ServiceProviderController.uploadWork);
 router.route('/uploadServiceProviderDocuments').put(SPAuth, uploadServiceProviderAadharCard.single('aadharCard'), ServiceProviderController.uploadServiceProviderDocuments);
 router.route('/updateSPLocation').put(SPAuth, ServiceProviderController.updateSPLocation);
+router.route('/updateServiceProviderSkills').put(SPAuth, ServiceProviderController.updateServiceProviderSkills);
 
 // DELETE ROUTES
+router.route('/removeServiceProviderSubcategory').delete(SPAuth, ServiceProviderController.removeServiceProviderSubcategory);
 
 export default router;

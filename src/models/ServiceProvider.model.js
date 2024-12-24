@@ -75,18 +75,26 @@ export const ServiceProviderSchema = new mongoose.Schema({
         type: Boolean,
         default: false, // Indicates if the provider can be available for instant work
     },
-    category: { type: String },
-    subcategory:[{ 
-        title: {
-            type: String
+    skills: [{
+        category: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Services",
+            required: true,
         },
-        pricing: [{
-            pricingtype: {
-                type: String,
-                enum: ["hourly", "daily", "contract"],
+        subcategories: [{
+            subcategory: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Services.subcategory",
+                required: true,
             },
-            from: { type: Number },
-            to: { type: Number },
+            pricing: [{
+                pricingtype: {
+                    type: String,
+                    enum: ["hourly", "daily", "contract"],
+                },
+                from: { type: Number },
+                to: { type: Number },
+            }],
         }],
     }],
     languagesSpoken: {

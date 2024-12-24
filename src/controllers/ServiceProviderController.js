@@ -417,3 +417,196 @@ export async function completeServiceProviderRegistrationDetails(req, res) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
     }
 }
+
+export async function addServiceProviderSkills(req, res) {
+    try {
+        const { userID } = req.sp;
+        const { skills } = req.body;
+
+        if (!skills || !Array.isArray(skills)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid input. Please provide skills array.",
+            });
+        }
+
+        const provider = await ServiceProviderModel.findById(userID);
+        if (!provider) {
+            return res.status(404).json({
+                success: false,
+                message: "Service provider not found.",
+            });
+        }
+
+        // Merge new skills with existing ones
+        skills.forEach((skill) => {
+            const categoryIndex = provider.skills.findIndex(
+                (existingSkill) =>
+                    existingSkill.category.toString() === skill.category
+            );
+
+            if (categoryIndex !== -1) {
+                // If the category exists, merge subcategories
+                skill.subcategories.forEach((subcategory) => {
+                    const subcategoryIndex = provider.skills[categoryIndex].subcategories.findIndex(
+                        (existingSub) =>
+                            existingSub.subcategory.toString() === subcategory.subcategory
+                    );
+
+                    if (subcategoryIndex !== -1) {
+                        // Update pricing if subcategory exists
+                        provider.skills[categoryIndex].subcategories[
+                            subcategoryIndex
+                        ].pricing = subcategory.pricing;
+                    } else {
+                        // Add new subcategory
+                        provider.skills[categoryIndex].subcategories.push(subcategory);
+                    }
+                });
+            } else {
+                // Add new category
+                provider.skills.push(skill);
+            }
+        });
+
+        // Save the updated provider
+        await provider.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Skills added successfully.",
+            data: provider.skills,
+        });
+    } catch (error) {
+        console.log(error.message);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+    }
+}
+
+export async function updateServiceProviderSkills(req, res) {
+    try {
+        const { userID } = req.sp; // ID of the logged-in service provider
+        const { skills } = req.body;
+
+        if (!skills || !Array.isArray(skills)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid input. Please provide a valid skills array.",
+            });
+        }
+
+        const provider = await ServiceProviderModel.findById(userID);
+        if (!provider) {
+            return res.status(404).json({
+                success: false,
+                message: "Service provider not found.",
+            });
+        }
+
+        skills.forEach((skill) => {
+            const categoryIndex = provider.skills.findIndex(
+                (existingSkill) =>
+                    existingSkill.category.toString() === skill.category
+            );
+
+            if (categoryIndex !== -1) {
+                // If the category exists, update subcategories
+                skill.subcategories.forEach((subcategory) => {
+                    const subcategoryIndex = provider.skills[categoryIndex].subcategories.findIndex(
+                        (existingSub) =>
+                            existingSub.subcategory.toString() === subcategory.subcategory
+                    );
+
+                    if (subcategoryIndex !== -1) {
+                        // Update pricing for existing subcategory
+                        provider.skills[categoryIndex].subcategories[subcategoryIndex].pricing = subcategory.pricing || provider.skills[categoryIndex].subcategories[subcategoryIndex].pricing;
+                    } else {
+                        // Add new subcategory if not present
+                        provider.skills[categoryIndex].subcategories.push(subcategory);
+                    }
+                });
+            } else {
+                // If the category doesn't exist
+                provider.skills.push(skill);
+            }
+        });
+
+        // Save the updated provider
+        await provider.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Skills updated successfully.",
+            data: provider.skills,
+        });
+    } catch (error) {
+        console.error(error.message);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function removeServiceProviderSubcategory(req, res) {
+    try {
+        const { userID } = req.sp; // ID of the logged-in service provider
+        const { category, subcategory } = req.body;
+
+        if (!category || !subcategory) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid input. Please provide both category and subcategory IDs.",
+            });
+        }
+
+        const provider = await ServiceProviderModel.findById(userID);
+        if (!provider) {
+            return res.status(404).json({
+                success: false,
+                message: "Service provider not found.",
+            });
+        }
+
+        // Find the category index
+        const categoryIndex = provider.skills.findIndex(
+            (skill) => skill.category.toString() === category
+        );
+
+        if (categoryIndex === -1) {
+            return res.status(404).json({
+                success: false,
+                message: "Category not found.",
+            });
+        }
+
+        // Find the subcategory index
+        const subcategoryIndex = provider.skills[categoryIndex].subcategories.findIndex(
+            (sub) => sub.subcategory.toString() === subcategory
+        );
+
+        if (subcategoryIndex === -1) {
+            return res.status(404).json({
+                success: false,
+                message: "Subcategory not found.",
+            });
+        }
+
+        // Remove the subcategory
+        provider.skills[categoryIndex].subcategories.splice(subcategoryIndex, 1);
+
+        // If no subcategories are left, remove the category
+        if (provider.skills[categoryIndex].subcategories.length === 0) {
+            provider.skills.splice(categoryIndex, 1);
+        }
+
+        // Save the updated provider
+        await provider.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Subcategory removed successfully.",
+            data: provider.skills,
+        });
+    } catch (error) {
+        console.error(error.message);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
