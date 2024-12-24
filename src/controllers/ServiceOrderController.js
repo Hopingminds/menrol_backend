@@ -1,7 +1,7 @@
 import ServiceOrderModel from "../models/ServiceOrder.model.js";
 import ServiceRequestModel from "../models/ServiceRequest.model.js";
 import ServicesModel from "../models/Services.model.js";
-import { getOrderValue } from "../services/order.service.js";
+import { deleteRequestOnOrderCompletion, getOrderValue } from "../services/order.service.js";
 
 export async function purchaseService(req, res) {
     try {
@@ -40,6 +40,7 @@ export async function purchaseService(req, res) {
 
         await newServiceOrder.save();
         //delete serviceRequest
+        await deleteRequestOnOrderCompletion(userID);
 
         return res.status(201).json({ success: true, message: "Service order created successfully", data: newServiceOrder });
     } catch (error) {

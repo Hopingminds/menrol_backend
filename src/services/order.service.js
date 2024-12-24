@@ -20,3 +20,17 @@ export async function getOrderValue(userId) {
         return { success: false, message: 'Failed to get order value.' };
     }
 }
+
+export async function deleteRequestOnOrderCompletion(userId) {
+    try {
+        const result = await ServiceRequestModel.deleteOne({ user: userId });
+        if (result.deletedCount === 0) {
+            return { success: false, message: 'User Request Not Found' };
+        }
+        
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: 'Failed to get order value.' };
+    }
+}
