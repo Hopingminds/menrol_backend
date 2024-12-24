@@ -4,6 +4,7 @@ import OtpModel from "../models/Otp.model.js";
 import ServiceProviderModel from "../models/ServiceProvider.model.js";
 import ServiceRequestModel from '../models/ServiceRequest.model.js';
 import ServicesModel from '../models/Services.model.js';
+import ServiceOrderModel from '../models/ServiceOrder.model.js';
 
 
 /** POST: http://localhost:3027/api/v1/verifyForExistingUser
@@ -329,7 +330,7 @@ export async function getServicesRequestNearSPLocation(req, res) {
         const radiusInMeters = radius * 1000;
 
         // Find service requests within the specified radius
-        const nearbyRequests = await ServiceRequestModel.find({
+        const nearbyRequests = await ServiceOrderModel.find({
             location: {
                 $near: {
                     $geometry: {
@@ -339,9 +340,12 @@ export async function getServicesRequestNearSPLocation(req, res) {
                     $maxDistance: radiusInMeters,
                 },
             },
-            status: { $in: ["pending", "confirmed"] }, // Filter for relevant statuses
+            "serviceRequest.subcategory": {
+                $elemMatch: {
+                    status: { $in: ["pending"] }, // Status inside subcategory
+                },
+            }, // Filter for relevant statuses
         });
-
         res.status(200).json({ message: "Nearby service requests retrieved successfully.", requests: nearbyRequests });
     } catch (error) {
         console.log(error.message);
