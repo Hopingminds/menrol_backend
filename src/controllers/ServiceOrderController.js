@@ -60,6 +60,8 @@ export async function getUserAllOrders(req, res) {
         const categorizedOrders = {
             pending: [],
             confirmed: [],
+            completed: [],
+            inProgress: [],
             cancelled: []
         };
 
@@ -70,6 +72,8 @@ export async function getUserAllOrders(req, res) {
             const statusBuckets = {
                 pending: [],
                 confirmed: [],
+                completed: [],
+                inProgress: [],
                 cancelled: []
             };
 

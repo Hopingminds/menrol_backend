@@ -32,7 +32,11 @@ const ServiceOrderSchema = new mongoose.Schema({
                     requestType: { type: String, required: true },
                     selectedAmount: { type: Number, required: true },
                     workersRequirment: { type: Number, required: true },
-                    status: { type: String, required: true },
+                    status: {
+                        type: String,
+                        enum: ['pending', 'confirmed', 'cancelled', 'inProgress', 'completed'],
+                        required: true
+                    },
                     instructions: { type: String },
                     instructionsImages: { type: [String], default: [] },
                     requestOperation: {
