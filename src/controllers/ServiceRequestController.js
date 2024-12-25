@@ -244,7 +244,7 @@ export async function getUserServiceRequests(req, res) {
             return res.status(404).json({ success: false, message: "No service requests found for this user" });
         }
 
-        const totalAmount = await getOrderValue();
+        const totalAmount = await getOrderValue(userID);
 
         return res.status(200).json({ success: true, serviceRequests, totalAmount });
     } catch (error) {
