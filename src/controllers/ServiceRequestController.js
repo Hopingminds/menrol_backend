@@ -127,26 +127,33 @@ export async function addServiceRequest(req, res) {
 
         // If there is an existing request, check if the subcategoryId already exists
         if (existingRequest) {
-            // Check if the subcategoryId is already in the requestedServices
-            const subcategoryExists = existingRequest.requestedServices.some(
-                (serviceRequest) =>
-                    serviceRequest.subcategory.some(
-                        (subcat) => subcat.subcategoryId.toString() === subcategory.subcategoryId.toString()
-                    )
+            // Locate the existing service in requestedServices
+            const serviceEntry = existingRequest.requestedServices.find(
+                (reqService) => reqService.service.toString() === service.toString()
             );
 
-            if (subcategoryExists) {
-                return res.status(400).json({
-                    success: false,
-                    message: "This subcategory has already been requested.",
+            if (serviceEntry) {
+                // Check if the subcategoryId already exists in the service's subcategories
+                const subcategoryExists = serviceEntry.subcategory.some(
+                    (subcat) => subcat.subcategoryId.toString() === subcategory.subcategoryId.toString()
+                );
+
+                if (subcategoryExists) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "This subcategory has already been requested.",
+                    });
+                }
+
+                // Add the subcategory to the existing service
+                serviceEntry.subcategory.push(subcategoryEntry);
+            } else {
+                // Add a new service entry with the subcategory
+                existingRequest.requestedServices.push({
+                    service: service,
+                    subcategory: [subcategoryEntry],
                 });
             }
-
-            // If not, push the new subcategory to the requestedServices
-            existingRequest.requestedServices.push({
-                service: service,
-                subcategory: [subcategoryEntry],
-            });
 
             await existingRequest.save();
             return res.status(200).json({
