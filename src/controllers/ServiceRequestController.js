@@ -153,6 +153,7 @@ export async function addServiceRequest(req, res) {
                 success: true,
                 message: "Service request updated successfully.",
                 data: existingRequest,
+                cartExists: true,
             });
         }
 
@@ -178,6 +179,7 @@ export async function addServiceRequest(req, res) {
             success: true,
             message: "Service request added successfully.",
             data: newServiceRequest,
+            cartExists: false,
         });
     } catch (error) {
         console.log(error);
