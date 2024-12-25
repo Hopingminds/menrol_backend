@@ -79,13 +79,13 @@ export const ServiceProviderSchema = new mongoose.Schema({
         category: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Services",
-            required: true,
+            default: null,
         },
         subcategories: [{
             subcategory: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: "Services.subcategory",
-                required: true,
+                default: null,
             },
             pricing: [{
                 pricingtype: {

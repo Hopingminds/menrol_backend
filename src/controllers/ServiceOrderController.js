@@ -160,3 +160,42 @@ export async function getUserOrderDetails(req, res) {
         return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
     }
 }
+
+export async function cancelOrderRequest(req, res) {
+    try {
+        const { userID } = req.user;
+        const { orderId, serviceId, subcategoryId } = req.body;
+
+        const order = await ServiceOrderModel.findOne({ _id: orderId, user: userID });
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Order not found." });
+        }
+
+        const serviceRequest = order.serviceRequest.find(req => req.service.toString() === serviceId);
+        if (!serviceRequest) {
+            return res.status(404).json({ success: false, message: "Service not found in the order." });
+        }
+
+        const subcategory = serviceRequest.subcategory.find(
+            sub => sub.subcategoryId.toString() === subcategoryId
+        );
+        if (!subcategory) {
+            return res.status(404).json({ success: false, message: "Subcategory not found in the service request." });
+        }
+
+        if (subcategory.status === 'cancelled') {
+            return res.status(400).json({
+                success: false,
+                message: `Subcategory is already ${subcategory.status}.`,
+            });
+        }
+
+        subcategory.status = 'cancelled';
+        await order.save();
+
+        return res.status(200).json({ success: true, message: "Order Request cancelled successfully", order });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
+    }
+}

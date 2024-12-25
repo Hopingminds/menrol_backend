@@ -49,11 +49,21 @@ const ServiceOrderSchema = new mongoose.Schema({
                             default: generateOtp,
                         },
                     },
-                    serviceProvider: {
-                        type: mongoose.Schema.Types.ObjectId,
-                        ref: 'ServiceProvider',
-                        default: null,
-                    },
+                    serviceProviders: [
+                        {
+                            serviceProviderId: {
+                                type: mongoose.Schema.Types.ObjectId,
+                                ref: 'ServiceProvider',
+                                required: true,
+                            },
+                            assignedWorkers: { type: Number, required: true }, // Number of workers assigned from this provider.
+                            status: {
+                                type: String,
+                                enum: ['pending', 'confirmed', 'cancelled', 'inProgress', 'completed'],
+                                default: 'pending',
+                            },
+                        }
+                    ],
                 }
             ]
         }
