@@ -2,6 +2,7 @@ import UserModel from "../models/User.model.js";
 import ServicesModel from "../models/Services.model.js";
 import ServiceRequestModel from "../models/ServiceRequest.model.js";
 import ServiceProviderModel from "../models/ServiceProvider.model.js";
+import { getOrderValue } from "../services/order.service.js";
 
 export async function createServiceRequest(req, res) { //NOT IN USE UPDATE IT BEFORE USING
     try {
@@ -243,7 +244,9 @@ export async function getUserServiceRequests(req, res) {
             return res.status(404).json({ success: false, message: "No service requests found for this user" });
         }
 
-        return res.status(200).json({ success: true, serviceRequests });
+        const totalAmount = await getOrderValue();
+
+        return res.status(200).json({ success: true, serviceRequests, totalAmount });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
