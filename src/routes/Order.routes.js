@@ -9,6 +9,7 @@ import SPAuth from '../middleware/ServiceProvide.Auth.js';
 // POST ROUTES
 router.route('/purchaseService').post(UserAuth, ServiceOrderController.purchaseService);
 router.route('/acceptServiceOrder').post(SPAuth, ServiceProviderController.acceptServiceOrder);
+router.route('/confirmStartWorkingOtp').post(SPAuth, ServiceProviderController.confirmStartWorkingOtp);
 
 // GET ROUTES
 router.route('/getUserAllOrders').get(UserAuth, ServiceOrderController.getUserAllOrders);
