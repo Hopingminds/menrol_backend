@@ -1,4 +1,5 @@
 import ServicesModel from "../models/Services.model.js";
+import ServicesSubcategoryModel from "../models/ServicesSubcategory.model.js";
 import { deleteFileFromAWS } from "../services/aws.service.js";
 
 /** POST: http://localhost:3027/api/v1/createService
@@ -604,5 +605,111 @@ export async function searchSubCategoryInAllCategories(req, res) {
         return res.status(200).json({ success: true, data: filteredCategories });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function moveSubcategory(req, res) {
+    try {
+        // Fetch all services
+        const services = await ServicesModel.find();
+
+        if (!services.length) {
+            return res.status(404).json({ message: "No services found to process." });
+        }
+
+        // Loop through each service and prepare subcategories for insertion
+        const subcategoriesToInsert = [];
+        const serviceUpdates = [];
+
+        for (const service of services) {
+            if (service.subcategory && service.subcategory.length) {
+                for (const subcategory of service.subcategory) {
+                    subcategoriesToInsert.push({
+                        category: service._id,
+                        _id: subcategory._id,
+                        title: subcategory.title,
+                        description: subcategory.description,
+                        pricing: subcategory.pricing,
+                        dailyWageWorker: subcategory.dailyWageWorker,
+                        hourlyWorker: subcategory.hourlyWorker,
+                        contractWorker: subcategory.contractWorker,
+                        image: subcategory.image,
+                    });
+                }
+                // Add service to be updated (clear subcategories)
+                serviceUpdates.push(service._id);
+            }
+        }
+
+        console.log(services);
+        
+        // Insert subcategories into ServicesSubcategory schema
+        if (subcategoriesToInsert.length) {
+            await ServicesSubcategoryModel.insertMany(subcategoriesToInsert);
+        }
+
+        // Clear subcategories in the Services schema
+        // if (serviceUpdates.length) {
+        //     await ServicesModel.updateMany(
+        //         { _id: { $in: serviceUpdates } },
+        //         { $set: { subcategory: [] } }
+        //     );
+        // }
+
+        return res.status(200).json({
+            message: `${subcategoriesToInsert.length} subcategories moved successfully.`,
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function addSubcategoriesToServices(req, res) {
+    try {
+        // Fetch all subcategories
+        const subcategories = await ServicesSubcategoryModel.find();
+
+        if (!subcategories.length) {
+            return res.status(404).json({ message: "No subcategories found to process." });
+        }
+
+        // Map subcategories by category ID
+        const subcategoriesByCategory = subcategories.reduce((map, subcategory) => {
+            const category = subcategory.category.toString(); // Convert ObjectId to string
+            if (!map[category]) {
+                map[category] = [];
+            }
+            map[category].push(subcategory._id);
+            return map;
+        }, {});
+
+        // Fetch all services
+        const services = await ServicesModel.find();
+
+        if (!services.length) {
+            return res.status(404).json({ message: "No services found to update." });
+        }
+
+        // Update each service with the corresponding subcategory IDs
+        const updatePromises = services.map(service => {
+            const subcategoriesForService = subcategoriesByCategory[service._id.toString()] || [];
+            return ServicesModel.updateOne(
+                { _id: service._id },
+                { $set: { subcategory: subcategoriesForService } }
+            );
+        });
+
+        // Await all updates
+        await Promise.all(updatePromises);
+
+        return res.status(200).json({
+            message: "Subcategories added to related services successfully.",
+        });
+    } catch (error) {
+        console.error("Error adding subcategories to services:", error);
+        return res.status(500).json({
+            message: "An error occurred while adding subcategories to services.",
+            error: error.message,
+        });
     }
 }

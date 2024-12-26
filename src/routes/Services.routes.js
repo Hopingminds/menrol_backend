@@ -7,6 +7,7 @@ import AdminAuth from '../middleware/Admin.Auth.js';
 
 // POST ROUTES
 router.route('/createService').post(AdminAuth, uploadSubCategoryImage.array('subcategoryImages', 10), ServicesController.createService);
+router.route('/addSubcategoriesToServices').post(ServicesController.addSubcategoriesToServices);
 
 // GET ROUTES
 router.route('/getServices').get(ServicesController.getServices);
