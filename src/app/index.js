@@ -46,7 +46,10 @@ app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' }));
 
 // Allow cross-origin resource sharing
 // app.use(crossOrigin(corsOptions));
-app.use(cors({ origin: "*" }));
+app.use(cors({
+    origin: "*",
+    credentials: true,
+}));
 
 // Parse cookies from requests
 app.use(cookieParser());
