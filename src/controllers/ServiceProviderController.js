@@ -817,11 +817,86 @@ export async function acceptServiceOrder(req, res) {
 export async function getServiceProviderAllOrders(req, res) {
     try {
         const { userID } = req.sp;
-        const orders = await ServiceProviderOrderModel.find({ ServiceProvider: userID });
+        const orders = await ServiceProviderOrderModel.find({ ServiceProvider: userID }).populate({
+            path: 'servicesProvided.serviceId',
+            model: 'Services',
+            select: '-subcategory'
+        });
+
         if(!orders){
             return res.status(404).json({ success: false, message: 'No Order Found.'})
         }
-        return res.status(200).json({ success: true, message: 'Orders found.', orders });
+
+        // Categorize orders by status
+        const categorizedOrders = {
+            pending: [],
+            confirmed: [],
+            completed: [],
+            cancelled: []
+        };
+
+        const allCategoriesTitles = []; // Tracks categories across all orders
+
+        // Iterate over each service order
+        for (const order of orders) {
+            const orderClone = JSON.parse(JSON.stringify(order)); // Deep copy to avoid mutating original data
+
+            // Categories specific to this order
+            const orderCategoriesTitles = [];
+
+            // Prepare subcategories for each status
+            const statusBuckets = {
+                pending: [],
+                confirmed: [],
+                completed: [],
+                cancelled: []
+            };
+
+            // Iterate over each service request in the order
+            for (const request of order.servicesProvided) {
+                const service = await ServicesModel.findById(request.serviceId._id);
+
+                if (service) {
+                    // Add the category to the order's categoriesTitles if not already added
+                    if (!orderCategoriesTitles.includes(service.category)) {
+                        orderCategoriesTitles.push(service.category);
+                    }
+
+                    // Add the category to the global categoriesTitles if not already added
+                    if (!allCategoriesTitles.includes(service.category)) {
+                        allCategoriesTitles.push(service.category);
+                    }
+                }
+
+                // Iterate over subcategories and categorize by status
+                request.subcategory.forEach(subcat => {
+                    if (subcat.serviceStatus === "inProgress") {
+                        statusBuckets.confirmed.push(subcat);
+                    } else if (statusBuckets[subcat.serviceStatus]) {
+                        statusBuckets[subcat.serviceStatus].push(subcat);
+                    }
+                });
+            }
+
+            // Add the order to categorizedOrders only once per status
+            Object.keys(statusBuckets).forEach(status => {
+                if (statusBuckets[status].length > 0) {
+                    const filteredOrder = {
+                        ...orderClone,
+                        servicesProvided: orderClone.servicesProvided.map(req => ({
+                            ...req,
+                            subcategory: statusBuckets[status].filter(
+                                subcat => req.subcategory.find(sc => sc._id.toString() === subcat._id.toString())
+                            )
+                        })).filter(req => req.subcategory.length > 0), // Remove requests with no subcategories for this status
+                        categoriesTitles: orderCategoriesTitles // Include categories specific to this order
+                    };
+                    categorizedOrders[status].push(filteredOrder);
+                }
+            });
+        }
+
+        return res.status(200).json({ success: true, message: 'Orders found.', data: categorizedOrders });
     } catch (error) {
         console.error(error.message);
         return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
@@ -875,7 +950,6 @@ export async function confirmStartWorkingOtp(req, res) {
 
 
         let otpVerified = false;
-        console.log(subcategory.requestOperation.startOtp);
         
         if (startOtp !== subcategory.requestOperation.startOtp) {
             return res.status(400).json({ success: false, message: 'Invalid OTP.' });
