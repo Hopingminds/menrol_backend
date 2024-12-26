@@ -14,6 +14,7 @@ router.route('/addServiceProviderSkills').post(SPAuth, ServiceProviderController
 // GET ROUTES
 router.route('/getServiceProvider').get(SPAuth, ServiceProviderController.getServiceProvider);
 router.route('/getServicesRequestNearSPLocation').get(SPAuth, ServiceProviderController.getServicesRequestNearSPLocation);
+router.route('/getServiceProviderAllOrders').get(SPAuth, ServiceProviderController.getServiceProviderAllOrders);
 
 // PUT ROUTES
 router.route('/completeServiceProviderRegistrationDetails').put(SPAuth, uploadServiceProviderImage.single('profile'), ServiceProviderController.completeServiceProviderRegistrationDetails);

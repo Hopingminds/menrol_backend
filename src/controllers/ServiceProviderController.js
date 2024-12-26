@@ -813,3 +813,17 @@ export async function acceptServiceOrder(req, res) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
     }
 }
+
+export async function getServiceProviderAllOrders(req, res) {
+    try {
+        const { userID } = req.sp;
+        const orders = await ServiceProviderOrderModel.find({ ServiceProvider: userID });
+        if(!orders){
+            return res.status(404).json({ success: false, message: 'No Order Found.'})
+        }
+        return res.status(200).json({ success: true, message: 'Orders found.', orders });
+    } catch (error) {
+        console.error(error.message);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
