@@ -7,7 +7,6 @@ import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
-import cors from 'cors';
 
 // Import application middleware 
 import corsOptions from '../configs/cors.config.js';
@@ -45,11 +44,7 @@ if (process.env.APP_NODE_ENV !== 'production') {
 app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' }));
 
 // Allow cross-origin resource sharing
-// app.use(crossOrigin(corsOptions));
-app.use(cors({
-    origin: "*",
-    credentials: true,
-}));
+app.use(crossOrigin(corsOptions));
 
 // Parse cookies from requests
 app.use(cookieParser());
