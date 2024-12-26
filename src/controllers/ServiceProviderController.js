@@ -5,6 +5,7 @@ import ServiceProviderModel from "../models/ServiceProvider.model.js";
 import ServiceRequestModel from '../models/ServiceRequest.model.js';
 import ServicesModel from '../models/Services.model.js';
 import ServiceOrderModel from '../models/ServiceOrder.model.js';
+import ServiceProviderOrderModel from '../models/ServiceProviderOrder.model.js';
 
 
 /** POST: http://localhost:3027/api/v1/verifyForExistingUser
@@ -682,7 +683,123 @@ export async function acceptServiceOrder(req, res) {
         }
 
         subcategory.status = 'confirmed';
-        subcategory.serviceProvider = userID;
+        subcategory.serviceProviders.push({
+            serviceProviderId: userID,
+            assignedWorkers: 1, // Assign all required workers by default
+            status: 'confirmed',
+        });
+
+        // Save or update the ServiceProviderOrder details
+        const existingServiceProviderOrder = await ServiceProviderOrderModel.findOne({
+            ServiceProvider: userID,
+            serviceOrderId: orderId,
+        });
+
+        if (!existingServiceProviderOrder) {
+            // Create a new ServiceProviderOrder
+            const newServiceProviderOrder = new ServiceProviderOrderModel({
+                ServiceProvider: userID,
+                serviceOrderId: orderId,
+                servicesProvided: [
+                    {
+                        serviceId,
+                        subcategory: [
+                            {
+                                subcategoryId,
+                                title: subcategory.title,
+                                requestType: subcategory.requestType,
+                                instructions: subcategory.instructions || "",
+                                instructionsImages: subcategory.instructionsImages || [],
+                                scheduledTiming: subcategory.scheduledTiming,
+                                workersRequirment: subcategory.workersRequirment,
+                                assignedWorkers: 1, // Default to 0, can be updated later
+                                serviceStatus: 'confirmed',
+                                otpDetails: {
+                                    startOtp: 0,
+                                    endOtp: 0,
+                                    startOtpConfirmed: false,
+                                    endOtpConfirmed: false,
+                                },
+                                workConfirmation: {
+                                    workStarted: false,
+                                    startTime: null,
+                                    workEnded: false,
+                                    endTime: null,
+                                },
+                            },
+                        ],
+                    },
+                ],
+                paymentDetails: {
+                    totalAmount: order.payment.totalamount,
+                    paidAmount: order.payment.paidAmount,
+                    dueAmount: order.payment.dueAmount,
+                    paymentStatus: order.payment.paymentstatus,
+                    lastPaymentDate: order.payment.paymentDate,
+                },
+            });
+            await newServiceProviderOrder.save();
+        } else {
+            // Update the existing ServiceProviderOrder
+            const service = existingServiceProviderOrder.servicesProvided.find(s => s.serviceId.toString() === serviceId);
+            if (!service) {
+                // Add a new service
+                existingServiceProviderOrder.servicesProvided.push({
+                    serviceId,
+                    subcategory: [
+                        {
+                            subcategoryId,
+                            title: subcategory.title,
+                            requestType: subcategory.requestType,
+                            instructions: subcategory.instructions || "",
+                            instructionsImages: subcategory.instructionsImages || [],
+                            scheduledTiming: subcategory.scheduledTiming,
+                            workersRequirment: subcategory.workersRequirment,
+                            assignedWorkers: 1, // Default to 0, can be updated later
+                            serviceStatus: 'confirmed',
+                            otpDetails: {
+                                startOtp: 0,
+                                endOtp: 0,
+                                startOtpConfirmed: false,
+                                endOtpConfirmed: false,
+                            },
+                            workConfirmation: {
+                                workStarted: false,
+                                startTime: null,
+                                workEnded: false,
+                                endTime: null,
+                            },
+                        },
+                    ],
+                });
+            } else {
+                // Add a new subcategory to the existing service
+                service.subcategory.push({
+                    subcategoryId,
+                    title: subcategory.title,
+                    requestType: subcategory.requestType,
+                    instructions: subcategory.instructions || "",
+                    instructionsImages: subcategory.instructionsImages || [],
+                    scheduledTiming: subcategory.scheduledTiming,
+                    workersRequirment: subcategory.workersRequirment,
+                    assignedWorkers: 1, // Default to 0, can be updated later
+                    serviceStatus: 'confirmed',
+                    otpDetails: {
+                        startOtp: 0,
+                        endOtp: 0,
+                        startOtpConfirmed: false,
+                        endOtpConfirmed: false,
+                    },
+                    workConfirmation: {
+                        workStarted: false,
+                        startTime: null,
+                        workEnded: false,
+                        endTime: null,
+                    },
+                });
+            }
+            await existingServiceProviderOrder.save();
+        }
 
         await order.save();
 
