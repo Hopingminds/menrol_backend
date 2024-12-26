@@ -357,11 +357,52 @@ export async function getServiceProvider(req, res) {
     try {
         const { userID } = req.sp;
 
-        const serviceProvider = await ServiceProviderModel.findById(userID);
+        const serviceProvider = await ServiceProviderModel.findById(userID).populate({
+            path: 'skills.category',
+            select: '-subcategory',
+        });
+
         if (!serviceProvider) {
             return res.status(404).json({ success: false, message: "Service provider not found." });
         }
 
+        // Step 1: Fetch all unique category IDs from the service provider's skills
+        const categoryIds = serviceProvider.skills
+            .filter(skill => skill.category && skill.category._id)
+            .map(skill => skill.category._id);
+
+        // Step 2: Fetch all subcategories for the categories in one go
+        const services = await ServicesModel.find({ '_id': { $in: categoryIds } }).select('subcategory _id');
+
+        // Step 3: Build a lookup map for subcategories
+        const subcategoryLookup = services.reduce((lookup, service) => {
+            lookup[service._id.toString()] = service.subcategory;
+            return lookup;
+        }, {});
+
+        // Step 4: Transform skills to replace subcategories using the lookup map
+        const updatedSkills = serviceProvider.skills.map(skill => {
+            if (skill.category && skill.category._id) {
+                const categorySubcategories = subcategoryLookup[skill.category._id.toString()] || [];
+
+                // Step 5: Replace subcategories with the matching ones from the lookup map
+                const updatedSubcategories = skill.subcategories.map(sub => {
+                    // Match the subcategory using its _id
+                    const matchingSubcategory = categorySubcategories.find(s => s._id.toString() === sub.subcategory.toString());
+
+                    // Replace subcategory if a match is found, else return original subcategory
+                    return matchingSubcategory ? { ...sub, subcategory: matchingSubcategory } : sub;
+                });
+
+                // Return the skill with updated subcategories
+                return { ...skill, subcategories: updatedSubcategories };
+            }
+
+            return skill; // Return the skill as is if no category
+        });
+
+        // Update the service provider's skills with the transformed data
+        serviceProvider.skills = updatedSkills;
         res.status(200).json({ success: true, message: "Service provider retrieved successfully.", serviceProvider });
     } catch (error) {
         console.log(error.message);
