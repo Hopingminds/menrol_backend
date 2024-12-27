@@ -933,7 +933,7 @@ export async function confirmStartWorkingOtp(req, res) {
             return res.status(404).json({ success: false, message: "Subcategory not found in the service request." });
         }
 
-        if (subcatsubcategory.status === 'completed' || subcategory.status === 'inProgress' || subcategory.status !== 'confirmed') {
+        if (subcategory.status === 'completed' || subcategory.status === 'inProgress' || subcategory.status !== 'confirmed') {
             return res.status(400).json({
                 success: false,
                 message: `Subcategory is ${subcategory.status}.`,
