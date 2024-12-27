@@ -933,7 +933,7 @@ export async function confirmStartWorkingOtp(req, res) {
             return res.status(404).json({ success: false, message: "Subcategory not found in the service request." });
         }
 
-        if (subcategory.status !== 'confirmed') {
+        if (subcatsubcategory.status === 'completed' || subcategory.status === 'inProgress' || subcategory.status !== 'confirmed') {
             return res.status(400).json({
                 success: false,
                 message: `Subcategory is ${subcategory.status}.`,
@@ -946,6 +946,7 @@ export async function confirmStartWorkingOtp(req, res) {
             return res.status(404).json({ success: false, message: 'Service Provider Not Found for the order request' });
         }
 
+        subcategory.status = 'inProgress';
         serviceProviderSubcategory.status = 'inProgress';
 
 
@@ -976,6 +977,87 @@ export async function confirmStartWorkingOtp(req, res) {
         await order.save();
         await serviceProviderOrder.save();
         return res.status(200).json({ success: true, message: "Service started successfully.", serviceProviderOrder });
+    } catch (error) {
+        console.error(error.message);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function confirmEndWorkingOtp(req, res) {
+    try {
+        const { userID } = req.sp;
+        const { orderId, serviceId, subcategoryId, endOtp } = req.body;
+
+        if (!orderId || !serviceId || !subcategoryId || !endOtp) {
+            return res.status(404).json({ success: false, message: 'Missing Required fields.' })
+        }
+        const serviceProviderOrder = await ServiceProviderOrderModel.findOne({ ServiceProvider: userID, serviceOrderId: orderId });
+        if (!serviceProviderOrder) {
+            return res.status(404).json({ success: false, message: 'service Provider Order Not Found.' });
+        }
+
+        const order = await ServiceOrderModel.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order Not Found.' });
+        }
+
+        const serviceRequest = order.serviceRequest.find(req => req.service.toString() === serviceId);
+        if (!serviceRequest) {
+            return res.status(404).json({ success: false, message: "Service not found in the order." });
+        }
+
+        const subcategory = serviceRequest.subcategory.find(
+            sub => sub.subcategoryId.toString() === subcategoryId
+        );
+        if (!subcategory) {
+            return res.status(404).json({ success: false, message: "Subcategory not found in the service request." });
+        }
+
+        if (subcategory.status !== 'inProgress' || subcategory.status === 'completed') {
+            return res.status(400).json({
+                success: false,
+                message: `Subcategory is ${subcategory.status}.`,
+            });
+        }
+
+        //check service provider is in the subcategory
+        const serviceProviderSubcategory = subcategory.serviceProviders.find(s => s.serviceProviderId.toString() === userID);
+        if (!serviceProviderSubcategory) {
+            return res.status(404).json({ success: false, message: 'Service Provider Not Found for the order request' });
+        }
+
+        subcategory.status = 'completed';
+        serviceProviderSubcategory.status = 'completed';
+
+
+        let otpVerified = false;
+
+        if (endOtp !== subcategory.requestOperation.endOtp) {
+            return res.status(400).json({ success: false, message: 'Invalid OTP.' });
+        }
+
+        const serviceProviderOrderserviceRequest = serviceProviderOrder.servicesProvided.find(req => req.serviceId.toString() === serviceId);
+        if (!serviceProviderOrderserviceRequest) {
+            return res.status(404).json({ success: false, message: "Service not found for service Provider order." });
+        }
+
+        const serviceProviderOrdersubcategory = serviceProviderOrderserviceRequest.subcategory.find(
+            sub => sub.subcategoryId.toString() === subcategoryId
+        );
+        if (!serviceProviderOrdersubcategory) {
+            return res.status(404).json({ success: false, message: "Subcategory not found for service Provider order." });
+        }
+
+        serviceProviderOrdersubcategory.serviceStatus = 'completed';
+        serviceProviderOrdersubcategory.otpDetails.endOtp = endOtp;
+        serviceProviderOrdersubcategory.otpDetails.endOtpConfirmed = true;
+        serviceProviderOrdersubcategory.workConfirmation.workEnded = true;
+        serviceProviderOrdersubcategory.workConfirmation.endTime = Date.now();
+
+        await order.save();
+        await serviceProviderOrder.save();
+
+        return res.status(200).json({ success: true, message: "Service ended successfully.", serviceProviderOrder });
     } catch (error) {
         console.error(error.message);
         return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
