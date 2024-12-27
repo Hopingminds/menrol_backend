@@ -1,4 +1,5 @@
 import ServiceOrderModel from "../models/ServiceOrder.model.js";
+import ServiceProviderOrderModel from "../models/ServiceProviderOrder.model.js";
 import ServiceRequestModel from "../models/ServiceRequest.model.js";
 import ServicesModel from "../models/Services.model.js";
 import { deleteRequestOnOrderCompletion, getOrderValue } from "../services/order.service.js";
@@ -166,9 +167,17 @@ export async function cancelOrderRequest(req, res) {
         const { userID } = req.user;
         const { orderId, serviceId, subcategoryId } = req.body;
 
+        if (!orderId || !serviceId || !subcategoryId) {
+            return res.status(404).json({ success: false, message: 'Missing Required fields.' })
+        }
         const order = await ServiceOrderModel.findOne({ _id: orderId, user: userID });
         if (!order) {
             return res.status(404).json({ success: false, message: "Order not found." });
+        }
+
+        const serviceProviderOrder = await ServiceProviderOrderModel.findOne({ serviceOrderId: orderId });
+        if (!serviceProviderOrder) {
+            return res.status(404).json({ success: false, message: 'service Provider Order Not Found.' });
         }
 
         const serviceRequest = order.serviceRequest.find(req => req.service.toString() === serviceId);
@@ -183,17 +192,90 @@ export async function cancelOrderRequest(req, res) {
             return res.status(404).json({ success: false, message: "Subcategory not found in the service request." });
         }
 
-        if (subcategory.status === 'cancelled') {
+        if (subcategory.status === 'cancelled' || subcategory.status === 'completed') {
             return res.status(400).json({
                 success: false,
                 message: `Subcategory is already ${subcategory.status}.`,
             });
         }
 
+        const serviceProviderOrderserviceRequest = serviceProviderOrder.servicesProvided.find(req => req.serviceId.toString() === serviceId);
+        if (!serviceProviderOrderserviceRequest) {
+            return res.status(404).json({ success: false, message: "Service not found for service Provider order." });
+        }
+
+        const serviceProviderOrdersubcategory = serviceProviderOrderserviceRequest.subcategory.find(
+            sub => sub.subcategoryId.toString() === subcategoryId
+        );
+        if (!serviceProviderOrdersubcategory) {
+            return res.status(404).json({ success: false, message: "Subcategory not found for service Provider order." });
+        }
+
+        serviceProviderOrdersubcategory.serviceStatus = 'cancelled';
         subcategory.status = 'cancelled';
         await order.save();
+        await serviceProviderOrder.save();
 
         return res.status(200).json({ success: true, message: "Order Request cancelled successfully", order });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
+    }
+}
+
+export async function updateOrderTiming(req, res) {
+    try {
+        const { userID } = req.user;
+        const { orderId, serviceId, subcategoryId, scheduledTiming } = req.body;
+
+        if (!orderId || !serviceId || !subcategoryId || !scheduledTiming) {
+            return res.status(404).json({ success: false, message: 'Missing Required fields.' })
+        }
+
+        const order = await ServiceOrderModel.findOne({ _id: orderId, user: userID });
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Order not found." });
+        }
+
+        const serviceProviderOrder = await ServiceProviderOrderModel.findOne({ serviceOrderId: orderId });
+        if (!serviceProviderOrder) {
+            return res.status(404).json({ success: false, message: 'service Provider Order Not Found.' });
+        }
+
+        const serviceRequest = order.serviceRequest.find(req => req.service.toString() === serviceId);
+        if (!serviceRequest) {
+            return res.status(404).json({ success: false, message: "Service not found in the order." });
+        }
+
+        const subcategory = serviceRequest.subcategory.find(
+            sub => sub.subcategoryId.toString() === subcategoryId
+        );
+        if (!subcategory) {
+            return res.status(404).json({ success: false, message: "Subcategory not found in the service request." });
+        }
+
+        const serviceProviderOrderserviceRequest = serviceProviderOrder.servicesProvided.find(req => req.serviceId.toString() === serviceId);
+        if (!serviceProviderOrderserviceRequest) {
+            return res.status(404).json({ success: false, message: "Service not found for service Provider order." });
+        }
+
+        const serviceProviderOrdersubcategory = serviceProviderOrderserviceRequest.subcategory.find(
+            sub => sub.subcategoryId.toString() === subcategoryId
+        );
+        if (!serviceProviderOrdersubcategory) {
+            return res.status(404).json({ success: false, message: "Subcategory not found for service Provider order." });
+        }
+
+        subcategory.scheduledTiming.startTime = scheduledTiming.startTime || subcategory.scheduledTiming.startTime;
+        subcategory.scheduledTiming.endTime = scheduledTiming.endTime || subcategory.scheduledTiming.endTime;
+
+        serviceProviderOrdersubcategory.scheduledTiming.startTime = scheduledTiming.startTime || serviceProviderOrdersubcategory.scheduledTiming.startTime;
+        serviceProviderOrdersubcategory.scheduledTiming.endTime = scheduledTiming.endTime || serviceProviderOrdersubcategory.scheduledTiming.endTime;
+
+        await order.save();
+        await serviceProviderOrder.save();
+
+        return res.status(200).json({ success: true, message: "Service timing updated successfully." });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });

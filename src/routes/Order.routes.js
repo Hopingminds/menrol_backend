@@ -17,6 +17,7 @@ router.route('/getUserAllOrders').get(UserAuth, ServiceOrderController.getUserAl
 router.route('/getUserOrderDetails').get(UserAuth, ServiceOrderController.getUserOrderDetails);
 
 // PUT ROUTES
+router.route('/updateOrderTiming').put(UserAuth, ServiceOrderController.updateOrderTiming);
 router.route('/cancelOrderRequest').put(UserAuth, ServiceOrderController.cancelOrderRequest);
 
 // DELETE ROUTES
