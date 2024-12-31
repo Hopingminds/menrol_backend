@@ -5,7 +5,7 @@ import * as AdminController from '../controllers/AdminController.js'
 import AdminAuth from '../middleware/Admin.Auth.js';
 
 // POST ROUTES
-router.route('/registerAdmin').post(AdminController.registerAdmin);
+router.route('/registerAdmin').post(AdminAuth, AdminController.registerAdmin);
 router.route('/loginWithEmailFirstStep').post(AdminController.loginWithEmailFirstStep);
 router.route('/verifyAdminOtp').post(AdminController.verifyAdminOtp);
 router.route('/BlockServiceProviderAccount').post(AdminAuth, AdminController.BlockServiceProviderAccount);
@@ -15,6 +15,7 @@ router.route('/BlockUserAccount').post(AdminAuth, AdminController.BlockUserAccou
 router.route('/UnblockUserAccount').post(AdminAuth, AdminController.UnblockUserAccount);
 router.route('/DeactivateUserAccount').post(AdminAuth, AdminController.DeactivateUserAccount);
 router.route('/verifyServiceProviderAccount').post(AdminAuth, AdminController.verifyServiceProviderAccount);
+router.route('/verifyServiceProviderAadharCard').post(AdminAuth, AdminController.verifyServiceProviderAadharCard);
 
 // GET ROUTES   
 router.route('/getAdminDetails').get(AdminAuth, AdminController.getAdminDetails);
