@@ -6,6 +6,7 @@ import ServiceRequestModel from '../models/ServiceRequest.model.js';
 import ServicesModel from '../models/Services.model.js';
 import ServiceOrderModel from '../models/ServiceOrder.model.js';
 import ServiceProviderOrderModel from '../models/ServiceProviderOrder.model.js';
+import ServiceProviderPaymentsModel from '../models/ServiceProviderPayments.model.js';
 
 
 /** POST: http://localhost:3027/api/v1/verifyForExistingUser
@@ -287,7 +288,7 @@ export async function updateSPLocation(req, res) {
 
         // Validate input
         if (longitude == null || latitude == null) {
-            return res.status(400).json({ message: "Longitude and latitude are required." });
+            return res.status(400).json({ success: false, message: "Longitude and latitude are required." });
         }
 
         // Find and update the user's location
@@ -298,10 +299,10 @@ export async function updateSPLocation(req, res) {
         );
 
         if (!updatedProvider) {
-            return res.status(404).json({ message: "Service provider not found." });
+            return res.status(404).json({ success: false, message: "Service provider not found." });
         }
 
-        res.status(200).json({ message: "Location updated successfully.", provider: updatedProvider });
+        res.status(200).json({ success: true, message: "Location updated successfully.", provider: updatedProvider });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
     }
@@ -1013,12 +1014,12 @@ export async function confirmEndWorkingOtp(req, res) {
             return res.status(404).json({ success: false, message: "Subcategory not found in the service request." });
         }
 
-        if (subcategory.status !== 'inProgress' || subcategory.status === 'completed') {
-            return res.status(400).json({
-                success: false,
-                message: `Subcategory is ${subcategory.status}.`,
-            });
-        }
+        // if (subcategory.status !== 'inProgress' || subcategory.status === 'completed') {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: `Subcategory is ${subcategory.status}.`,
+        //     });
+        // }
 
         //check service provider is in the subcategory
         const serviceProviderSubcategory = subcategory.serviceProviders.find(s => s.serviceProviderId.toString() === userID);
@@ -1054,6 +1055,17 @@ export async function confirmEndWorkingOtp(req, res) {
         serviceProviderOrdersubcategory.workConfirmation.workEnded = true;
         serviceProviderOrdersubcategory.workConfirmation.endTime = Date.now();
 
+        console.log(subcategory.selectedAmount);
+        
+        const serviceProviderPayments = new ServiceProviderPaymentsModel({
+            serviceProviderId: userID,
+            serviceOrderId: orderId,
+            orderServiceId: serviceId,
+            orderSubcategoryId: subcategoryId,
+            totalEarned: subcategory.selectedAmount
+        });
+
+        await serviceProviderPayments.save();
         await order.save();
         await serviceProviderOrder.save();
 

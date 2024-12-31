@@ -47,6 +47,8 @@ export const ServiceProviderSchema = new mongoose.Schema({
         }
     },
     rating: { type: Number, max: 5 },
+    totalEarnings: { type: Number, default: 0 },
+    totalOrders: { type: Number, default: 0 },
     availability: {
         type: String,
         enum: ["available", "not available", "on request"],
