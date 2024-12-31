@@ -85,16 +85,31 @@ export async function createServiceRequest(req, res) { //NOT IN USE UPDATE IT BE
     }
 }
 
+/** POST: http://localhost:3027/api/v1/addServiceRequest
+ * @body {
+ *  "instImages": "file image",
+ *  "service": "675985fa18dd6b70bf89c756"
+ *  "subcategory": {
+        "subcategoryId": "675985fa18dd6b70bf89c758",
+        "title": "Sanitary Plumber",
+        "requestType": "daily",
+        "workersRequirment": 2,
+        "selectedAmount": 400,
+        "instructions": "Please bring all necessary tools.",
+        "scheduledTiming": {
+            "startTime": "2024-12-15T10:00:00Z",
+            "endTime": "2024-12-15T12:00:00Z"
+        }
+    }
+}
+ */
 export async function addServiceRequest(req, res) {
     try {
         const { userID } = req.user;
-        let { service, subcategory, location, address } = req.body;
-
-        console.log("Body => ",req.body);
-        console.log("File => ",req.files);
+        let { service, subcategory } = req.body;
         
         // Validate required fields
-        if (!service || !subcategory || !location || !address) {
+        if (!service || !subcategory) {
             return res.status(400).json({ success: false, message: "All required fields must be provided." });
         }
         
@@ -106,8 +121,6 @@ export async function addServiceRequest(req, res) {
         
         const parsedsubcategory = JSON.parse(subcategory);
         subcategory = parsedsubcategory;
-        const parsedlocation = JSON.parse(location);
-        location = parsedlocation;
         
         
         const subcategoryEntry = {
@@ -173,11 +186,6 @@ export async function addServiceRequest(req, res) {
                     subcategory: [subcategoryEntry],
                 },
             ],
-            location: {
-                type: location.type,
-                coordinates: location.coordinates,
-            },
-            address,
         });
 
         await newServiceRequest.save();
