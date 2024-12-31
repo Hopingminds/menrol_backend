@@ -53,9 +53,9 @@ const limiter = rateLimit({
 });
 
 const apiLimiter = rateLimit({
-    windowMs: 10 * 1000, // 10 seconds
-    max: 1, // limit each IP to 1 login request per window (here, 10 seconds)
-    message: { message: 'Too many login attempts from this IP, please try again after a 60 second pause' },
+    windowMs: 30 * 1000, // 10 seconds
+    max: 3, // limit each IP to 1 login request per window (here, 10 seconds)
+    message: { message: 'Too many login attempts from this IP, please try again after a 30 second pause' },
     handler: async (req, res, _next, options) => {
         try {
             const LOGS_FOLDER = `${appRoot}/logs/limiter`;
@@ -87,6 +87,8 @@ const apiLimiter = rateLimit({
 
         // Sending API error response
         res.status(options.statusCode).json({
+            success: false,
+            message: 'TOO MANY REQUEST',
             time: currentDateTime(),
             result: {
                 title: "TOO MANY REQUEST",
