@@ -386,26 +386,39 @@ export async function getServiceProvider(req, res) {
         const updatedSkills = serviceProvider.skills.map(skill => {
             if (skill.category && skill.category._id) {
                 const categorySubcategories = subcategoryLookup[skill.category._id.toString()] || [];
-
+        
                 // Step 5: Replace subcategories with the matching ones from the lookup map
                 const updatedSubcategories = skill.subcategories.map(sub => {
-                    // Match the subcategory using its _id
-                    const matchingSubcategory = categorySubcategories.find(s => s._id.toString() === sub.subcategory.toString());
-
-                    // Replace subcategory if a match is found, else return original subcategory
-                    return matchingSubcategory ? { ...sub, subcategory: matchingSubcategory } : sub;
+                    const matchingSubcategory = categorySubcategories.find(
+                        s => s._id.toString() === sub.subcategory.toString()
+                    );
+        
+                    // Use toObject() to convert Mongoose document to plain object
+                    const updatedSub = {
+                        ...sub.toObject(), // Convert to plain object
+                        subcategory: matchingSubcategory || sub.subcategory, // Keep original if no match
+                    };
+        
+                    return updatedSub;
                 });
-
+        
+                
                 // Return the skill with updated subcategories
-                return { ...skill, subcategories: updatedSubcategories };
+                return {
+                    ...skill.toObject(), // Convert to plain object
+                    subcategories: updatedSubcategories,
+                };
             }
-
-            return skill; // Return the skill as is if no category
+            
+            return skill.toObject(); // Return the skill as is, converted to plain object
         });
+        
+        const responseObject = serviceProvider.toObject();
+        // Remove the `skills` field
+        delete responseObject.skills;
+        responseObject.skills = updatedSkills;
 
-        // Update the service provider's skills with the transformed data
-        serviceProvider.skills = updatedSkills;
-        res.status(200).json({ success: true, message: "Service provider retrieved successfully.", serviceProvider });
+        res.status(200).json({ success: true, message: "Service provider retrieved successfully.", data: responseObject });
     } catch (error) {
         console.log(error.message);
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
