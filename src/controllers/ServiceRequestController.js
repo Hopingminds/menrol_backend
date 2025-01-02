@@ -250,7 +250,10 @@ export async function getUserServiceRequests(req, res) {
         const { userID } = req.user; // Or use req.user._id if you're authenticating via middleware
 
         // Fetch service requests for the user
-        const serviceRequests = await ServiceRequestModel.findOne({ user: userID });
+        const serviceRequests = await ServiceRequestModel.findOne({ user: userID }).populate({
+            path: 'requestedServices.service',
+            select: '-subcategory',
+        });
 
         if (!serviceRequests) {
             return res.status(404).json({ success: false, message: "No service requests found for this user" });
@@ -262,8 +265,58 @@ export async function getUserServiceRequests(req, res) {
         }
 
         const totalAmount = await getOrderValue(userID);
+        const requestedServices = serviceRequests.requestedServices;
 
-        return res.status(200).json({ success: true, serviceRequests, totalAmount });
+        const categoryIds = requestedServices
+            .filter(skill => skill.service && skill.service._id)
+            .map(skill => skill.service._id);
+        
+        const services = await ServicesModel.find({ '_id': { $in: categoryIds } }).select('subcategory _id');
+        
+        const subcategoryLookup = services.reduce((lookup, service) => {
+            lookup[service._id.toString()] = service.subcategory;
+            return lookup;
+        }, {});
+
+        const updatedRequests = requestedServices.map(request => {
+            if (request.service && request.service._id) {
+                const categorySubcategories = subcategoryLookup[request.service._id.toString()] || [];
+        
+                // Step 5: Replace subcategory with the matching ones from the lookup map
+                const updatedSubcategories = request.subcategory.map(sub => {
+                    const matchingSubcategory = categorySubcategories.find(
+                        s => s._id.toString() === sub.subcategoryId.toString()
+                    );
+        
+                    
+                    // Use toObject() to convert Mongoose document to plain object
+                    const updatedSub = {
+                        ...sub.toObject(), // Convert to plain object
+                        subcategoryId: matchingSubcategory || sub.subcategoryId, // Keep original if no match
+                    };
+                    
+                    return updatedSub;
+                });
+                
+                // console.log(updatedSubcategories);
+                
+                // Return the request with updated subcategory
+                return {
+                    ...request.toObject(), // Convert to plain object
+                    subcategory: updatedSubcategories,
+                };
+            }
+            
+            return request.toObject(); // Return the request as is, converted to plain object
+        });
+
+        console.log(updatedRequests[0].subcategory);
+        
+        const responseObject = serviceRequests.toObject();
+        delete responseObject.requestedServices;
+        responseObject.requestedServices = updatedRequests;
+
+        return res.status(200).json({ success: true, serviceRequests: responseObject, totalAmount });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
@@ -317,8 +370,88 @@ export async function removeServiceRequest(req, res) {
 export async function updateServiceRequest(req, res) {
     try {
         const { userID } = req.user;
-        let { service, subcategory, location, address } = req.body;
-        
+        const { service, subcategoryId, updatedFields } = req.body;
+
+        // Validate required fields
+        if (!service || !subcategoryId || !updatedFields) {
+            return res.status(400).json({ success: false, message: "All required fields must be provided." });
+        }
+
+        // Check if the service request exists for the user
+        let existingRequest = await ServiceRequestModel.findOne({ user: userID });
+
+        if (!existingRequest) {
+            return res.status(404).json({
+                success: false,
+                message: "Service request not found.",
+            });
+        }
+
+        // Locate the service in requestedServices
+        const serviceEntry = existingRequest.requestedServices.find(
+            (reqService) => reqService.service.toString() === service.toString()
+        );
+
+        if (!serviceEntry) {
+            return res.status(404).json({
+                success: false,
+                message: "Service not found in the service request.",
+            });
+        }
+
+        // Locate the subcategory in the service
+        const subcategoryEntry = serviceEntry.subcategory.find(
+            (subcat) => subcat.subcategoryId.toString() === subcategoryId.toString()
+        );
+
+        if (!subcategoryEntry) {
+            return res.status(404).json({
+                success: false,
+                message: "Subcategory not found in the service request.",
+            });
+        }
+
+        const instImages = req.files?.map(file => file.location) || [];
+        // Allowed fields to update
+        const allowedFields = [
+            "requestType",
+            "selectedAmount",
+            "workersRequirment",
+            "instructions",
+            "instructionsImages",
+            "scheduledTiming",
+        ];
+
+        // Update the fields in the subcategory
+        for (const key in updatedFields) {
+            if (allowedFields.includes(key)) {
+                if (key === "scheduledTiming" && updatedFields[key]) {
+                    subcategoryEntry[key].startTime = updatedFields[key].startTime
+                        ? new Date(updatedFields[key].startTime)
+                        : subcategoryEntry[key].startTime;
+                    subcategoryEntry[key].endTime = updatedFields[key].endTime
+                        ? new Date(updatedFields[key].endTime)
+                        : subcategoryEntry[key].endTime;
+                } else if (key === "instructionsImages") {
+                    // Replace with updated images and append new ones
+                    subcategoryEntry[key] = [
+                        ...updatedFields[key],
+                        ...instImages,
+                    ];
+                } else {
+                    subcategoryEntry[key] = updatedFields[key];
+                }
+            }
+        }
+
+        // Save the updated service request
+        await existingRequest.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Service request updated successfully.",
+            data: existingRequest,
+        });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
