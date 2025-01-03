@@ -221,7 +221,11 @@ export async function getAllUsers(req, res) {
 export async function getServiceProvidersDetails(req, res) {
     try {
         const { providerID } = req.query;
-        const serviceProvider = await ServiceProviderModel.findById(providerID);
+        const serviceProvider = await ServiceProviderModel.findById(providerID).populate({
+            path: 'skills.category',
+            select: '-subcategory',
+        });
+
         if(!serviceProvider){
             return res.status(404).json({ success: false, message: 'Service provider not found' });
         }
