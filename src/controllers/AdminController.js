@@ -6,6 +6,7 @@ import AdminModel from "../models/Admin.model.js";
 import OtpModel from '../models/Otp.model.js';
 import ServiceProviderModel from "../models/ServiceProvider.model.js";
 import UserModel from "../models/User.model.js";
+import ServicesModel from '../models/Services.model.js';
 
 export async function registerAdmin(req, res) {
     try {
@@ -224,7 +225,58 @@ export async function getServiceProvidersDetails(req, res) {
         if(!serviceProvider){
             return res.status(404).json({ success: false, message: 'Service provider not found' });
         }
-        return res.status(200).json({ success: true, serviceProvider, orders: "coming soon" });
+
+        // Step 1: Fetch all unique category IDs from the service provider's skills
+        const categoryIds = serviceProvider.skills
+            .filter(skill => skill.category && skill.category._id)
+            .map(skill => skill.category._id);
+
+        // Step 2: Fetch all subcategories for the categories in one go
+        const services = await ServicesModel.find({ '_id': { $in: categoryIds } }).select('subcategory _id');
+
+        // Step 3: Build a lookup map for subcategories
+        const subcategoryLookup = services.reduce((lookup, service) => {
+            lookup[service._id.toString()] = service.subcategory;
+            return lookup;
+        }, {});
+
+        // Step 4: Transform skills to replace subcategories using the lookup map
+        const updatedSkills = serviceProvider.skills.map(skill => {
+            if (skill.category && skill.category._id) {
+                const categorySubcategories = subcategoryLookup[skill.category._id.toString()] || [];
+
+                // Step 5: Replace subcategories with the matching ones from the lookup map
+                const updatedSubcategories = skill.subcategories.map(sub => {
+                    const matchingSubcategory = categorySubcategories.find(
+                        s => s._id.toString() === sub.subcategory.toString()
+                    );
+
+                    // Use toObject() to convert Mongoose document to plain object
+                    const updatedSub = {
+                        ...sub.toObject(), // Convert to plain object
+                        subcategory: matchingSubcategory || sub.subcategory, // Keep original if no match
+                    };
+
+                    return updatedSub;
+                });
+
+
+                // Return the skill with updated subcategories
+                return {
+                    ...skill.toObject(), // Convert to plain object
+                    subcategories: updatedSubcategories,
+                };
+            }
+
+            return skill.toObject(); // Return the skill as is, converted to plain object
+        });
+
+        const responseObject = serviceProvider.toObject();
+        // Remove the `skills` field
+        delete responseObject.skills;
+        responseObject.skills = updatedSkills;
+
+        return res.status(200).json({ success: true, serviceProvider: responseObject, orders: "coming soon" });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
     }
