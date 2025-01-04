@@ -602,6 +602,10 @@ export async function updateServiceProviderSkills(req, res) {
                 provider.skills.push(skill);
             }
         });
+        // Remove categories not present in the updated skills array
+        provider.skills = provider.skills.filter((existingSkill) =>
+            skills.some((updatedSkill) => updatedSkill.category === existingSkill.category.toString())
+        );
 
         // Save the updated provider
         await provider.save();
