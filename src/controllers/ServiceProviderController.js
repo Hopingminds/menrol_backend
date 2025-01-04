@@ -575,14 +575,30 @@ export async function updateServiceProviderSkills(req, res) {
 
                     if (subcategoryIndex !== -1) {
                         // Update pricing for existing subcategory
-                        provider.skills[categoryIndex].subcategories[subcategoryIndex].pricing = subcategory.pricing || provider.skills[categoryIndex].subcategories[subcategoryIndex].pricing;
+                        provider.skills[categoryIndex].subcategories[subcategoryIndex].pricing =
+                            subcategory.pricing ||
+                            provider.skills[categoryIndex].subcategories[subcategoryIndex].pricing;
                     } else {
                         // Add new subcategory if not present
                         provider.skills[categoryIndex].subcategories.push(subcategory);
                     }
                 });
+
+                // Remove subcategories not present in the new skills array
+                provider.skills[categoryIndex].subcategories = provider.skills[categoryIndex].subcategories.filter(
+                    (existingSub) =>
+                        skill.subcategories.some(
+                            (subcategory) =>
+                                subcategory.subcategory === existingSub.subcategory.toString()
+                        )
+                );
+
+                // If no subcategories remain, remove the skill
+                if (provider.skills[categoryIndex].subcategories.length === 0) {
+                    provider.skills.splice(categoryIndex, 1);
+                }
             } else {
-                // If the category doesn't exist
+                // If the category doesn't exist, add the new skill
                 provider.skills.push(skill);
             }
         });
