@@ -256,12 +256,12 @@ export async function getUserServiceRequests(req, res) {
         });
 
         if (!serviceRequests) {
-            return res.status(404).json({ success: true, serviceRequests:[], message: "No service requests found for this user" });
+            return res.status(404).json({ success: false, message: "No service requests found for this user" });
         }
 
         if(serviceRequests.requestedServices.length === 0){
             await serviceRequests.deleteOne();
-            return res.status(404).json({ success: true, serviceRequests:[], message: "No service requests found for this user" });
+            return res.status(404).json({ success: false, message: "No service requests found for this user" });
         }
 
         const totalAmount = await getOrderValue(userID);
