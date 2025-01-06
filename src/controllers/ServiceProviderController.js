@@ -7,6 +7,7 @@ import ServicesModel from '../models/Services.model.js';
 import ServiceOrderModel from '../models/ServiceOrder.model.js';
 import ServiceProviderOrderModel from '../models/ServiceProviderOrder.model.js';
 import ServiceProviderPaymentsModel from '../models/ServiceProviderPayments.model.js';
+import { populateSubcategoryInServiceProviderOrder } from '../lib/populateSubcategory.js';
 
 
 /** POST: http://localhost:3027/api/v1/verifyForExistingUser
@@ -857,7 +858,7 @@ export async function acceptServiceOrder(req, res) {
 export async function getServiceProviderAllOrders(req, res) {
     try {
         const { userID } = req.sp;
-        const orders = await ServiceProviderOrderModel.find({ ServiceProvider: userID }).populate({
+        const serviceProviderOrder = await ServiceProviderOrderModel.find({ ServiceProvider: userID }).populate({
             path: 'servicesProvided.serviceId',
             model: 'Services',
             select: '-subcategory'
@@ -870,9 +871,22 @@ export async function getServiceProviderAllOrders(req, res) {
             },        
         });
 
-        if(!orders){
+        if(!serviceProviderOrder){
             return res.status(404).json({ success: false, message: 'No Order Found.'})
         }
+
+        const orders = await Promise.all(
+            serviceProviderOrder.map(async (order) => {
+                const updatedRequestedServices = await populateSubcategoryInServiceProviderOrder(order);
+                
+                // Convert to plain object and replace servicesProvided with the updated one
+                const orderObject = order.toObject();
+                delete orderObject.servicesProvided;
+                orderObject.servicesProvided = updatedRequestedServices;
+        
+                return orderObject;
+            })
+        );
 
         // Categorize orders by status
         const categorizedOrders = {
