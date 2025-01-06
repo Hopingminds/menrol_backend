@@ -347,7 +347,7 @@ export async function getServicesRequestNearSPLocation(req, res) {
                     status: { $in: ["pending"] }, // Status inside subcategory
                 },
             }, // Filter for relevant statuses
-        });
+        }).populate({path:'user' , select:'-SavedAddresses -phone -dob -isAccountBlocked -_id'});
         res.status(200).json({ message: "Nearby service requests retrieved successfully.", requests: nearbyRequests });
     } catch (error) {
         console.log(error.message);
@@ -742,6 +742,7 @@ export async function acceptServiceOrder(req, res) {
                                 subcategoryId,
                                 title: subcategory.title,
                                 requestType: subcategory.requestType,
+                                selectedAmount: subcategory.selectedAmount,
                                 instructions: subcategory.instructions || "",
                                 instructionsImages: subcategory.instructionsImages || [],
                                 scheduledTiming: subcategory.scheduledTiming,
@@ -764,10 +765,13 @@ export async function acceptServiceOrder(req, res) {
                         ],
                     },
                 ],
+                location: order.location,
+                address: order.address,
                 paymentDetails: {
                     totalAmount: order.payment.totalamount,
                     paidAmount: order.payment.paidAmount,
                     dueAmount: order.payment.dueAmount,
+                    paymentType: order.payment.paymentType,
                     paymentStatus: order.payment.paymentstatus,
                     lastPaymentDate: order.payment.paymentDate,
                 },
@@ -785,6 +789,7 @@ export async function acceptServiceOrder(req, res) {
                             subcategoryId,
                             title: subcategory.title,
                             requestType: subcategory.requestType,
+                            selectedAmount: subcategory.selectedAmount,
                             instructions: subcategory.instructions || "",
                             instructionsImages: subcategory.instructionsImages || [],
                             scheduledTiming: subcategory.scheduledTiming,
@@ -812,6 +817,7 @@ export async function acceptServiceOrder(req, res) {
                     subcategoryId,
                     title: subcategory.title,
                     requestType: subcategory.requestType,
+                    selectedAmount: subcategory.selectedAmount,
                     instructions: subcategory.instructions || "",
                     instructionsImages: subcategory.instructionsImages || [],
                     scheduledTiming: subcategory.scheduledTiming,
@@ -855,6 +861,13 @@ export async function getServiceProviderAllOrders(req, res) {
             path: 'servicesProvided.serviceId',
             model: 'Services',
             select: '-subcategory'
+        }).populate({
+            path: 'serviceOrderId',
+            select: 'user',
+            populate: {
+                path: 'user',
+                select: 'name phone email profileImage perferredLanguage'
+            },        
         });
 
         if(!orders){

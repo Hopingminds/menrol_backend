@@ -23,6 +23,7 @@ const ServiceProviderOrderSchema = new mongoose.Schema({
                     subcategoryId: { type: mongoose.Schema.Types.ObjectId, required: true },
                     title: { type: String, required: true },
                     requestType: { type: String, required: true },
+                    selectedAmount: { type: Number, required: true },
                     instructions: { type: String },
                     instructionsImages: { type: [String], default: [] },
                     scheduledTiming: {
@@ -55,10 +56,30 @@ const ServiceProviderOrderSchema = new mongoose.Schema({
             ],
         },
     ],
+    location: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point',
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            required: true,
+        }
+    },
+    address: {
+        type: String,
+        required: true,
+    },
     paymentDetails: {
         totalAmount: { type: Number, default: 0 },
         paidAmount: { type: Number, default: 0 },
         dueAmount: { type: Number, default: 0 },
+        paymentType: {
+            type: String,
+            enum: ['upfront', 'post-service'],
+            default: 'upfront'
+        },
         paymentStatus: {
             type: String,
             enum: ['pending', 'partial', 'completed', 'failed'],
