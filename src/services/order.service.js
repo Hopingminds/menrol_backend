@@ -10,7 +10,26 @@ export async function getOrderValue(userId) {
         let totalAmount = 0;
         request.requestedServices.forEach((service) => {
             service.subcategory.forEach((subcat) => {
-                totalAmount += subcat.selectedAmount * subcat.workersRequirment;
+                const { selectedAmount, workersRequirment, requestType, scheduledTiming } = subcat;
+
+                if (!scheduledTiming?.startTime || !scheduledTiming?.endTime) {
+                    throw new Error('Start time or end time is missing in the subcategory');
+                }
+
+                const startTime = new Date(scheduledTiming.startTime);
+                const endTime = new Date(scheduledTiming.endTime);
+
+                let calculatedDuration = 0;
+
+                // Calculate duration based on requestType
+                if (requestType === "hourly") {
+                    calculatedDuration = Math.abs((endTime - startTime) / (1000 * 60 * 60)); // duration in hours
+                } else if (requestType === "daily") {
+                    calculatedDuration = Math.abs((endTime - startTime) / (1000 * 60 * 60 * 24)); // duration in days
+                }
+
+                // Accumulate the total amount
+                totalAmount += selectedAmount * workersRequirment * calculatedDuration;
             });
         });
 
