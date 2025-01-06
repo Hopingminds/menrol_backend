@@ -7,7 +7,7 @@ import ServicesModel from '../models/Services.model.js';
 import ServiceOrderModel from '../models/ServiceOrder.model.js';
 import ServiceProviderOrderModel from '../models/ServiceProviderOrder.model.js';
 import ServiceProviderPaymentsModel from '../models/ServiceProviderPayments.model.js';
-import { populateSubcategoryInServiceProviderOrder } from '../lib/populateSubcategory.js';
+import { populateSubcategoryInServiceOrder, populateSubcategoryInServiceProviderOrder } from '../lib/populateSubcategory.js';
 
 
 /** POST: http://localhost:3027/api/v1/verifyForExistingUser
@@ -348,8 +348,21 @@ export async function getServicesRequestNearSPLocation(req, res) {
                     status: { $in: ["pending"] }, // Status inside subcategory
                 },
             }, // Filter for relevant statuses
-        }).populate({path:'user' , select:'-SavedAddresses -dob -isAccountBlocked'});
-        res.status(200).json({ message: "Nearby service requests retrieved successfully.", requests: nearbyRequests });
+        }).populate({path:'user' , select:'-SavedAddresses -dob -isAccountBlocked'})
+        .populate({ path: 'serviceRequest.service', select: '-subcategory' })
+
+        const requests = await Promise.all(
+            nearbyRequests.map(async (request) => {
+                const updatedRequest = await populateSubcategoryInServiceOrder(request);
+
+                const requestObject = request.toObject();
+                delete requestObject.serviceRequest;
+                requestObject.serviceRequest = updatedRequest;
+
+                return requestObject;
+            })
+        )
+        res.status(200).json({ message: "Nearby service requests retrieved successfully.", requests: requests });
     } catch (error) {
         console.log(error.message);
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
