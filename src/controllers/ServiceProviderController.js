@@ -347,7 +347,7 @@ export async function getServicesRequestNearSPLocation(req, res) {
                     status: { $in: ["pending"] }, // Status inside subcategory
                 },
             }, // Filter for relevant statuses
-        }).populate({path:'user' , select:'-SavedAddresses -phone -dob -isAccountBlocked -_id'});
+        }).populate({path:'user' , select:'-SavedAddresses -dob -isAccountBlocked'});
         res.status(200).json({ message: "Nearby service requests retrieved successfully.", requests: nearbyRequests });
     } catch (error) {
         console.log(error.message);
