@@ -24,6 +24,7 @@ import CommonRoutes from '../routes/Common.routes.js'
 import UserRoutes from '../routes/User.routes.js'
 import AdminRoutes from '../routes/Admin.routes.js'
 import OrderRoutes from '../routes/Order.routes.js'
+import SubscriptionRoutes from '../routes/Subscription.routes.js'
 
 // Load environment variables from .env file
 dotenv.config();
@@ -91,6 +92,7 @@ app.use('/api/v1', AdminRoutes);
 app.use('/api/v1', CommonRoutes);
 app.use('/api/v1', ServicesRoutes);
 app.use('/api/v1', ServiceProviderRoutes);
+app.use('/api/v1', SubscriptionRoutes);
 
 // 404 ~ not found error handler
 app.use((req, res, _next) => {

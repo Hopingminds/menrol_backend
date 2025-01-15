@@ -149,6 +149,16 @@ export const ServiceProviderSchema = new mongoose.Schema({
         of: String,
         default: {}, // Example: { LinkedIn: "https://linkedin.com/in/johndoe", Instagram: "https://instagram.com/johndoe" }
     },
+    activeSubscription:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ProviderSubscription",
+        default: null,
+    },
+    providerSubscription:[{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ProviderSubscription",
+        default: null,
+    }],
 },{ timestamps: true });
 
 ServiceProviderSchema.index({ location: '2dsphere' });
