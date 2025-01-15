@@ -10,13 +10,13 @@ import ServiceProviderPaymentsModel from '../models/ServiceProviderPayments.mode
 import { populateSubcategoryInServiceOrder, populateSubcategoryInServiceProviderOrder } from '../lib/populateSubcategory.js';
 
 
-/** POST: http://localhost:3027/api/v1/verifyForExistingUser
+/** POST: http://localhost:3027/api/v1/verifyForExistingServiceProvide
  * @body {
  *  "phone": "8765445678",
  *  "email": "example@email.com"
  * }
  */
-export async function verifyForExistingUser(req, res) {
+export async function verifyForExistingServiceProvide(req, res) {
 	try {
 		const { email, phone } = req.body;
 
@@ -509,20 +509,21 @@ export async function addServiceProviderSkills(req, res) {
         }
 
         // Merge new skills with existing ones
-        skills.forEach((skill) => {
+        for (const skill of skills) {
             const categoryIndex = provider.skills.findIndex(
                 (existingSkill) =>
                     existingSkill.category.toString() === skill.category
             );
-
+            const service = await ServicesModel.findOne({ _id: skill.category });
+        
             if (categoryIndex !== -1) {
                 // If the category exists, merge subcategories
-                skill.subcategories.forEach((subcategory) => {
+                for (const subcategory of skill.subcategories) {
                     const subcategoryIndex = provider.skills[categoryIndex].subcategories.findIndex(
                         (existingSub) =>
                             existingSub.subcategory.toString() === subcategory.subcategory
                     );
-
+        
                     if (subcategoryIndex !== -1) {
                         // Update pricing if subcategory exists
                         provider.skills[categoryIndex].subcategories[
@@ -530,14 +531,48 @@ export async function addServiceProviderSkills(req, res) {
                         ].pricing = subcategory.pricing;
                     } else {
                         // Add new subcategory
-                        provider.skills[categoryIndex].subcategories.push(subcategory);
+                        const matchingSub = service.subcategory.find(
+                            (sub) => sub._id.toString() === subcategory.subcategory
+                        );
+        
+                        if (matchingSub) {
+                            for (const pricingDetail of subcategory.pricing) {
+                                if (pricingDetail.pricingtype === 'hourly') {
+                                    matchingSub.hourlyWorker = (matchingSub.hourlyWorker || 0) + 1;
+                                } else if (pricingDetail.pricingtype === 'daily') {
+                                    matchingSub.dailyWageWorker = (matchingSub.dailyWageWorker || 0) + 1;
+                                } else if (pricingDetail.pricingtype === 'contract') {
+                                    matchingSub.contractWorker = (matchingSub.contractWorker || 0) + 1;
+                                }
+                            }
+                            provider.skills[categoryIndex].subcategories.push(subcategory);
+                            await service.save();
+                        }        
                     }
-                });
+                }
             } else {
-                // Add new category
+                // Add new category and process subcategories
+                for (const subcategory of skill.subcategories) {
+                    const matchingSub = service.subcategory.find(
+                        (sub) => sub._id.toString() === subcategory.subcategory
+                    );
+
+                    if (matchingSub) {
+                        for (const pricingDetail of subcategory.pricing) {
+                            if (pricingDetail.pricingtype === 'hourly') {
+                                matchingSub.hourlyWorker = (matchingSub.hourlyWorker || 0) + 1;
+                            } else if (pricingDetail.pricingtype === 'daily') {
+                                matchingSub.dailyWageWorker = (matchingSub.dailyWageWorker || 0) + 1;
+                            } else if (pricingDetail.pricingtype === 'contract') {
+                                matchingSub.contractWorker = (matchingSub.contractWorker || 0) + 1;
+                            }
+                        }
+                    }
+                }
                 provider.skills.push(skill);
+                await service.save();
             }
-        });
+        }            
 
         // Save the updated provider
         await provider.save();
@@ -573,15 +608,15 @@ export async function updateServiceProviderSkills(req, res) {
             });
         }
 
-        skills.forEach((skill) => {
+        for (const skill of skills) {
             const categoryIndex = provider.skills.findIndex(
                 (existingSkill) =>
                     existingSkill.category.toString() === skill.category
             );
-
+            const service = await ServicesModel.findOne({ _id: skill.category });
             if (categoryIndex !== -1) {
                 // If the category exists, update subcategories
-                skill.subcategories.forEach((subcategory) => {
+                for (const subcategory of skill.subcategories) {
                     const subcategoryIndex = provider.skills[categoryIndex].subcategories.findIndex(
                         (existingSub) =>
                             existingSub.subcategory.toString() === subcategory.subcategory
@@ -594,9 +629,25 @@ export async function updateServiceProviderSkills(req, res) {
                             provider.skills[categoryIndex].subcategories[subcategoryIndex].pricing;
                     } else {
                         // Add new subcategory if not present
-                        provider.skills[categoryIndex].subcategories.push(subcategory);
+                        const matchingSub = service.subcategory.find(
+                            (sub) => sub._id.toString() === subcategory.subcategory
+                        );
+        
+                        if (matchingSub) {
+                            for (const pricingDetail of subcategory.pricing) {
+                                if (pricingDetail.pricingtype === 'hourly') {
+                                    matchingSub.hourlyWorker = (matchingSub.hourlyWorker || 0) + 1;
+                                } else if (pricingDetail.pricingtype === 'daily') {
+                                    matchingSub.dailyWageWorker = (matchingSub.dailyWageWorker || 0) + 1;
+                                } else if (pricingDetail.pricingtype === 'contract') {
+                                    matchingSub.contractWorker = (matchingSub.contractWorker || 0) + 1;
+                                }
+                            }
+                            provider.skills[categoryIndex].subcategories.push(subcategory);
+                            await service.save();
+                        }
                     }
-                });
+                }
 
                 // Remove subcategories not present in the new skills array
                 provider.skills[categoryIndex].subcategories = provider.skills[categoryIndex].subcategories.filter(
@@ -613,9 +664,27 @@ export async function updateServiceProviderSkills(req, res) {
                 }
             } else {
                 // If the category doesn't exist, add the new skill
+                for (const subcategory of skill.subcategories) {
+                    const matchingSub = service.subcategory.find(
+                        (sub) => sub._id.toString() === subcategory.subcategory
+                    );
+
+                    if (matchingSub) {
+                        for (const pricingDetail of subcategory.pricing) {
+                            if (pricingDetail.pricingtype === 'hourly') {
+                                matchingSub.hourlyWorker = (matchingSub.hourlyWorker || 0) + 1;
+                            } else if (pricingDetail.pricingtype === 'daily') {
+                                matchingSub.dailyWageWorker = (matchingSub.dailyWageWorker || 0) + 1;
+                            } else if (pricingDetail.pricingtype === 'contract') {
+                                matchingSub.contractWorker = (matchingSub.contractWorker || 0) + 1;
+                            }
+                        }
+                    }
+                }
                 provider.skills.push(skill);
+                await service.save();
             }
-        });
+        }
         // Remove categories not present in the updated skills array
         provider.skills = provider.skills.filter((existingSkill) =>
             skills.some((updatedSkill) => updatedSkill.category === existingSkill.category.toString())

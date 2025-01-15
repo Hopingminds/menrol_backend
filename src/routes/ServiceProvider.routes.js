@@ -7,6 +7,7 @@ import { uploadServiceProviderAadharCard, uploadServiceProviderImage, uploadServ
 import SPAuth from '../middleware/ServiceProvide.Auth.js';
 
 // POST ROUTES
+router.route('/verifyForExistingServiceProvide').post(ServiceProviderController.verifyForExistingServiceProvide);
 router.route('/verifyServiceProviderOtp').post(ServiceProviderController.verifyServiceProviderOtp);
 router.route('/acceptServiceRequest').post(SPAuth, ServiceRequestController.acceptServiceRequest);
 router.route('/addServiceProviderSkills').post(SPAuth, ServiceProviderController.addServiceProviderSkills);
