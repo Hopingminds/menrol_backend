@@ -168,16 +168,12 @@ export async function cancelOrderRequest(req, res) {
         const { orderId, serviceId, subcategoryId } = req.body;
 
         if (!orderId || !serviceId || !subcategoryId) {
-            return res.status(404).json({ success: false, message: 'Missing Required fields.' })
+            return res.status(404).json({ success: false, message: 'Missing Required fields.' });
         }
+
         const order = await ServiceOrderModel.findOne({ _id: orderId, user: userID });
         if (!order) {
             return res.status(404).json({ success: false, message: "Order not found." });
-        }
-
-        const serviceProviderOrder = await ServiceProviderOrderModel.findOne({ serviceOrderId: orderId });
-        if (!serviceProviderOrder) {
-            return res.status(404).json({ success: false, message: 'service Provider Order Not Found.' });
         }
 
         const serviceRequest = order.serviceRequest.find(req => req.service.toString() === serviceId);
@@ -199,22 +195,26 @@ export async function cancelOrderRequest(req, res) {
             });
         }
 
-        const serviceProviderOrderserviceRequest = serviceProviderOrder.servicesProvided.find(req => req.serviceId.toString() === serviceId);
-        if (!serviceProviderOrderserviceRequest) {
-            return res.status(404).json({ success: false, message: "Service not found for service Provider order." });
-        }
-
-        const serviceProviderOrdersubcategory = serviceProviderOrderserviceRequest.subcategory.find(
-            sub => sub.subcategoryId.toString() === subcategoryId
-        );
-        if (!serviceProviderOrdersubcategory) {
-            return res.status(404).json({ success: false, message: "Subcategory not found for service Provider order." });
-        }
-
-        serviceProviderOrdersubcategory.serviceStatus = 'cancelled';
+        // Update the subcategory status in the order
         subcategory.status = 'cancelled';
+        
+        // Check if the serviceProviderOrder exists and update if it does
+        const serviceProviderOrder = await ServiceProviderOrderModel.findOne({ serviceOrderId: orderId });
+        if (serviceProviderOrder) {
+            const serviceProviderOrderserviceRequest = serviceProviderOrder.servicesProvided.find(req => req.serviceId.toString() === serviceId);
+            if (serviceProviderOrderserviceRequest) {
+                const serviceProviderOrdersubcategory = serviceProviderOrderserviceRequest.subcategory.find(
+                    sub => sub.subcategoryId.toString() === subcategoryId
+                );
+                
+                if (serviceProviderOrdersubcategory) {
+                    serviceProviderOrdersubcategory.serviceStatus = 'cancelled';
+                    await serviceProviderOrder.save();
+                }
+            }
+        }
+
         await order.save();
-        await serviceProviderOrder.save();
 
         return res.status(200).json({ success: true, message: "Order Request cancelled successfully", order });
     } catch (error) {
