@@ -770,6 +770,51 @@ export async function removeServiceProviderSubcategory(req, res) {
     }
 }
 
+export async function updateOrderSubcategoryViewer(req, res) {
+    try {
+        const { userID } = req.sp;
+        const { orderId, serviceId, subcategoryId } = req.body;
+
+        const order = await ServiceOrderModel.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Order not found." });
+        }
+
+        const serviceRequest = order.serviceRequest.find(req => req.service.toString() === serviceId);
+        if (!serviceRequest) {
+            return res.status(404).json({ success: false, message: "Service not found in the order." });
+        }
+
+        const subcategory = serviceRequest.subcategory.find(
+            sub => sub.subcategoryId.toString() === subcategoryId
+        );
+        if (!subcategory) {
+            return res.status(404).json({ success: false, message: "Subcategory not found in the service request." });
+        }
+
+        if (subcategory.status !== 'pending') {
+            return res.status(400).json({
+                success: false,
+                message: `Subcategory is already ${subcategory.status}.`,
+            });
+        }
+
+        subcategory.viewers.push({
+            serviceProvider: userID,
+        });
+        
+        await order.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Subcategory viewer updated successfully."
+        });
+    } catch (error) {
+        console.error(error.message);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
 export async function acceptServiceOrder(req, res) {
     try {
         const { userID } = req.sp;
@@ -799,12 +844,25 @@ export async function acceptServiceOrder(req, res) {
             });
         }
 
-        subcategory.status = 'confirmed';
-        subcategory.serviceProviders.push({
-            serviceProviderId: userID,
-            assignedWorkers: 1, // Assign all required workers by default
-            status: 'confirmed',
-        });
+        const existingProviderIndex = subcategory.serviceProviders.findIndex( ServiceProvider => ServiceProvider.serviceProviderId.toString() === userID);
+        
+        if(existingProviderIndex !== -1) {
+            return res.json({
+                success: false,
+                message: "You are already a service provider for this service."
+            })
+        }
+        else{
+            subcategory.serviceProviders.push({
+                serviceProviderId: userID,
+                status: 'confirmed',
+            });
+        }
+
+        const acceptedServiceProvider = subcategory.serviceProviders.filter(s => s.status === 'confirmed');
+        if(subcategory.workersRequirment === acceptedServiceProvider.length){
+            subcategory.status = 'confirmed';
+        }
 
         // Save or update the ServiceProviderOrder details
         const existingServiceProviderOrder = await ServiceProviderOrderModel.findOne({

@@ -49,6 +49,14 @@ const ServiceOrderSchema = new mongoose.Schema({
                             default: generateOtp,
                         },
                     },
+                    viewers:[
+                        {
+                            serviceProvider: {
+                                type: mongoose.Schema.Types.ObjectId,
+                                ref: 'ServiceProvider'
+                            },  
+                        }
+                    ],
                     serviceProviders: [
                         {
                             serviceProviderId: {
@@ -56,7 +64,6 @@ const ServiceOrderSchema = new mongoose.Schema({
                                 ref: 'ServiceProvider',
                                 required: true,
                             },
-                            assignedWorkers: { type: Number, required: true }, // Number of workers assigned from this provider.
                             status: {
                                 type: String,
                                 enum: ['pending', 'confirmed', 'cancelled', 'inProgress', 'completed'],
@@ -71,6 +78,11 @@ const ServiceOrderSchema = new mongoose.Schema({
     orderDate: {
         type: Date,
         default: Date.now,
+    },
+    orderStatus: {
+        type: String,
+        enum: ['notStarted', 'active', 'finalized', 'partiallyFailed', 'fullyCancelled'],
+        default: 'notStarted',
     },
     location: {
         type: {
@@ -107,5 +119,29 @@ const ServiceOrderSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 ServiceOrderSchema.index({ location: '2dsphere' });
+
+ServiceOrderSchema.pre('save', async function (next) {
+    if (!this.isModified('serviceRequest')) return next();
+
+    // Flatten all subcategory statuses
+    const statuses = this.serviceRequest.flatMap((request) =>
+        request.subcategory.map((sub) => sub.status)
+    );
+
+    // Determine the overall orderStatus based on custom rules
+    if (statuses.every((status) => status === 'pending')) {
+        this.orderStatus = 'notStarted';
+    } else if (statuses.every((status) => status === 'completed')) {
+        this.orderStatus = 'finalized';
+    } else if (statuses.every((status) => status === 'cancelled')) {
+        this.orderStatus = 'fullyCancelled';
+    } else if (statuses.some((status) => status === 'cancelled')) {
+        this.orderStatus = 'partiallyFailed';
+    } else {
+        this.orderStatus = 'active';
+    }
+
+    next();
+});
 
 export default mongoose.model.ServiceOrder || mongoose.model('ServiceOrder', ServiceOrderSchema);

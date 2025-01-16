@@ -15,6 +15,7 @@ router.route('/confirmEndWorkingOtp').post(SPAuth, ServiceProviderController.con
 // GET ROUTES
 router.route('/getUserAllOrders').get(UserAuth, ServiceOrderController.getUserAllOrders);
 router.route('/getUserOrderDetails').get(UserAuth, ServiceOrderController.getUserOrderDetails);
+router.route('/updateOrderSubcategoryViewer').put(SPAuth, ServiceProviderController.updateOrderSubcategoryViewer);
 
 // PUT ROUTES
 router.route('/updateOrderTiming').put(UserAuth, ServiceOrderController.updateOrderTiming);
