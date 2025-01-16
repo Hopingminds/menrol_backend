@@ -81,7 +81,7 @@ const ServiceOrderSchema = new mongoose.Schema({
     },
     orderStatus: {
         type: String,
-        enum: ['notStarted', 'active', 'finalized', 'partiallyFailed', 'fullyCancelled'],
+        enum: ['notStarted', 'active', 'finalized', 'underProgress', 'fullyCancelled', 'completed'],
         default: 'notStarted',
     },
     location: {
@@ -123,20 +123,20 @@ ServiceOrderSchema.index({ location: '2dsphere' });
 ServiceOrderSchema.pre('save', async function (next) {
     if (!this.isModified('serviceRequest')) return next();
 
-    // Flatten all subcategory statuses
     const statuses = this.serviceRequest.flatMap((request) =>
         request.subcategory.map((sub) => sub.status)
     );
 
-    // Determine the overall orderStatus based on custom rules
     if (statuses.every((status) => status === 'pending')) {
         this.orderStatus = 'notStarted';
-    } else if (statuses.every((status) => status === 'completed')) {
+    } else if (statuses.every((status) => status === 'confirmed')) {
         this.orderStatus = 'finalized';
     } else if (statuses.every((status) => status === 'cancelled')) {
         this.orderStatus = 'fullyCancelled';
-    } else if (statuses.some((status) => status === 'cancelled')) {
-        this.orderStatus = 'partiallyFailed';
+    } else if (statuses.every((status) => ['completed', 'cancelled'].includes(status))) {
+        this.orderStatus = 'completed';
+    } else if (statuses.some((status) => status === 'inProgress') && statuses.every((status) => ['confirmed', 'inProgress', 'completed', 'cancelled'].includes(status))) {
+        this.orderStatus = 'underProgress';
     } else {
         this.orderStatus = 'active';
     }
