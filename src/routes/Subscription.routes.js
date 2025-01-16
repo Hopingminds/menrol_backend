@@ -12,6 +12,7 @@ router.route('/purchaseSubscription').post(SPAuth, SubscriptionController.purcha
 // GET ROUTES 
 router.route('/getAllSubscriptions').get(AdminAuth, SubscriptionController.getAllSubscriptions);
 router.route('/getActiveSubscriptions').get(SubscriptionController.getActiveSubscriptions);
+router.route('/getSubscription').get(SubscriptionController.getSubscription);
 
 // PUT ROUTES
 router.route('/updateSubscription').put(AdminAuth, SubscriptionController.updateSubscription);

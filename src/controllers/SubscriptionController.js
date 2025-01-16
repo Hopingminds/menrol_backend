@@ -157,6 +157,26 @@ export async function getActiveSubscriptions(req, res) {
     }
 }
 
+export async function getSubscription(req, res) {
+    try {
+        const { subscriptionId } = req.query;
+
+        const subscription = await SubscriptionModel.findById(subscriptionId);
+        if (!subscription) {
+            return res.status(404).json({ success: false, message: "Subscription not found." });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Subscription fetched successfully.",
+            subscription: subscription
+        });
+    } catch (error) {
+        console.error(error.message);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
 export async function purchaseSubscription(req, res) {
     try {
         const { userID } = req.sp;
