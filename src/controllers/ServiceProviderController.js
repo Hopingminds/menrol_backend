@@ -799,9 +799,9 @@ export async function updateOrderSubcategoryViewer(req, res) {
             });
         }
 
-        subcategory.viewers.push({
-            serviceProvider: userID,
-        });
+        if (!subcategory.viewers.some(viewer => viewer.serviceProvider === userID)) {
+            subcategory.viewers.push({ serviceProvider: userID });
+        }        
         
         await order.save();
 
