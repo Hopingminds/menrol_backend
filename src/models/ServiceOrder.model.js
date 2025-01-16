@@ -84,6 +84,10 @@ const ServiceOrderSchema = new mongoose.Schema({
         enum: ['notStarted', 'active', 'finalized', 'underProgress', 'fullyCancelled', 'completed'],
         default: 'notStarted',
     },
+    orderRaised:{
+        type: Boolean,
+        default: true
+    },
     location: {
         type: {
             type: String,
@@ -129,16 +133,22 @@ ServiceOrderSchema.pre('save', async function (next) {
 
     if (statuses.every((status) => status === 'pending')) {
         this.orderStatus = 'notStarted';
+        this.orderRaised = true;
     } else if (statuses.every((status) => status === 'confirmed')) {
         this.orderStatus = 'finalized';
+        this.orderRaised = false;
     } else if (statuses.every((status) => status === 'cancelled')) {
         this.orderStatus = 'fullyCancelled';
+        this.orderRaised = false;
     } else if (statuses.every((status) => ['completed', 'cancelled'].includes(status))) {
         this.orderStatus = 'completed';
+        this.orderRaised = false;
     } else if (statuses.some((status) => status === 'inProgress') && statuses.every((status) => ['confirmed', 'inProgress', 'completed', 'cancelled'].includes(status))) {
         this.orderStatus = 'underProgress';
+        this.orderRaised = false;
     } else {
         this.orderStatus = 'active';
+        this.orderRaised = true;
     }
 
     next();

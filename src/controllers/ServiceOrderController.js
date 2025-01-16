@@ -58,6 +58,12 @@ export async function getUserAllOrders(req, res) {
             path: 'serviceRequest.service',
             model: 'Services',
             select: '-subcategory'
+        }).populate({
+            path: 'serviceRequest.subcategory.viewers.serviceProvider',
+            select: 'name profileImage'
+        }).populate({
+            path: 'serviceRequest.subcategory.serviceProviders.serviceProviderId',
+            select: '-password -authToken -isAccountBlocked -aadharCard -activeSubscription -providerSubscription'
         });
         
         if (!serviceOrders) {
@@ -135,6 +141,33 @@ export async function getUserAllOrders(req, res) {
 
 
         return res.status(200).json({ success: true, data: categorizedOrders });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
+    }
+}
+
+export async function getUserRasiedOrders(req, res) {
+    try {
+        const { userID } = req.user;
+
+        const order = await ServiceOrderModel.findOne({ user: userID, orderRaised: true }).populate({
+            path: 'serviceRequest.service',
+            model: 'Services',
+            select: '-subcategory'
+        }).populate({
+            path: 'serviceRequest.subcategory.viewers.serviceProvider',
+            select: 'name profileImage'
+        }).populate({
+            path: 'serviceRequest.subcategory.serviceProviders.serviceProviderId',
+            select: 'name profileImage'
+        });
+
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Order not found" });
+        }
+
+        return res.status(200).json({ success: true, order });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
