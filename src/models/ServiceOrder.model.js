@@ -86,7 +86,7 @@ const ServiceOrderSchema = new mongoose.Schema({
     },
     orderRaised:{
         type: Boolean,
-        default: true
+        default: false
     },
     location: {
         type: {

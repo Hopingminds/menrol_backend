@@ -1,4 +1,5 @@
 import ServiceOrderModel from "../models/ServiceOrder.model.js";
+import ServiceProviderModel from "../models/ServiceProvider.model.js";
 import ServiceProviderOrderModel from "../models/ServiceProviderOrder.model.js";
 import ServiceRequestModel from "../models/ServiceRequest.model.js";
 import ServicesModel from "../models/Services.model.js";
@@ -37,6 +38,7 @@ export async function purchaseService(req, res) {
                 method: 'app',
                 paymentDate: new Date(),
             },
+            orderRaised: true
         });
 
         await newServiceOrder.save();

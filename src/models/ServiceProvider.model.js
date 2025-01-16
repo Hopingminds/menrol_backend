@@ -23,6 +23,10 @@ export const ServiceProviderSchema = new mongoose.Schema({
         type:Boolean,
         default:true
     },
+    isOnline:{
+        type:Boolean,
+        default:true
+    },
     isProfileComplete:{
         type:Boolean,
         default:false
