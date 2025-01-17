@@ -3,6 +3,7 @@ import ServicesModel from "../models/Services.model.js";
 import ServiceRequestModel from "../models/ServiceRequest.model.js";
 import ServiceProviderModel from "../models/ServiceProvider.model.js";
 import { getOrderValue } from "../services/order.service.js";
+import ServiceOrderModel from "../models/ServiceOrder.model.js";
 
 export async function createServiceRequest(req, res) { //NOT IN USE UPDATE IT BEFORE USING
     try {
@@ -112,8 +113,12 @@ export async function addServiceRequest(req, res) {
         if (!service || !subcategory) {
             return res.status(400).json({ success: false, message: "All required fields must be provided." });
         }
-        
-        
+
+        const order = await ServiceOrderModel.find({ user: userID, orderRaised: true });
+        if (order && order.length!==0) {
+            return res.status(400).json({ success: false, message: "You have already raised an order." });
+        }
+
         // Check if a service request already exists for the user
         let existingRequest = await ServiceRequestModel.findOne({ user: userID });
         
