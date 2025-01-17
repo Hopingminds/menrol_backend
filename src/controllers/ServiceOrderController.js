@@ -176,6 +176,77 @@ export async function getUserRasiedOrders(req, res) {
     }
 }
 
+export async function fetchEligibleServiceProviders(req, res) {
+    try {
+        const { userID } = req.user;
+
+        const order = await ServiceOrderModel.findOne({ user: userID, orderRaised: true }).populate({
+            path: 'serviceRequest.service',
+            model: 'Services',
+            select: '-subcategory'
+        }).populate({
+            path: 'serviceRequest.subcategory.viewers.serviceProvider',
+            select: 'name profileImage'
+        }).populate({
+            path: 'serviceRequest.subcategory.serviceProviders.serviceProviderId',
+            select: 'name profileImage'
+        });
+
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Order not found" });
+        }
+
+        const results = await Promise.all(
+            order.serviceRequest.map(async (request) => {
+                const { subcategory } = request;
+                if (!subcategory || !Array.isArray(subcategory)) {
+                    throw new Error('Invalid subcategory data');
+                }
+
+                const subcategoryResults = await Promise.all(
+                    subcategory.map(async (sub) => {
+                        const { subcategoryId, workersRequirment } = sub;
+
+                        if (!subcategoryId || !workersRequirment) {
+                            throw new Error('Subcategory ID and worker requirement are required');
+                        }
+
+                        // Fetch eligible service providers
+                        const eligibleProviders = await ServiceProviderModel.find({
+                            skills: {
+                                $elemMatch: {
+                                    subcategories: {
+                                        $elemMatch: { subcategory: subcategoryId },
+                                    },
+                                },
+                            },
+                            isAccountBlocked: false,
+                        })
+                            .select('-password -authToken -aadharCard -totalEarnings -activeSubscription -providerSubscription') // Exclude sensitive fields
+                            .lean();
+
+                        return {
+                            subcategoryId,
+                            workersRequirment,
+                            eligibleProviders,
+                        };
+                    })
+                );
+
+                return {
+                    service: request.service,
+                    subcategories: subcategoryResults,
+                };
+            })
+        );
+
+        return res.status(200).json({ success: true, results });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
+    }
+}
+
 export async function getUserOrderDetails(req, res) {
     try {
         const { userID } = req.user;
