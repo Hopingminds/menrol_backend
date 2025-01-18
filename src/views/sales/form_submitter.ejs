@@ -1,0 +1,21 @@
+<!-- views/index.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sale API Request</title>
+</head>
+<body>
+  <form action="<%= gatewayURL %>" method="post" name="server_request" id="sales-api-form" target="_top">
+    <input type="hidden" name="EncData" id="EncData" value="<%= EncData %>">
+    <input type="hidden" name="MerchantId" id="MerchantId" value="<%= data.MerchantId %>">
+    <input type="hidden" name="BankId" id="BankId" value="<%= data.BankId %>">
+    <input type="hidden" name="TerminalId" id="TerminalId" value="<%= data.TerminalId %>">
+    <input type="hidden" name="Version" id="Version" value="<%= data.Version %>">
+  </form>
+  <script type="text/javascript">
+    document.server_request.submit();
+  </script>
+</body>
+</html>

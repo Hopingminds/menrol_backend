@@ -1,0 +1,32 @@
+<style type="text/css">
+  * {
+    font-family: sans-serif;
+  }
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #08185a;
+  }
+  h4 {
+    text-align: center;
+  }
+  .shade {
+    height: 30px;
+    background-color: #e1e1e1;
+  }
+</style>
+<center><h1>STATUS RESPONSE</h1></center>
+<hr />
+
+<table width="60%" align="center" border="0" cellpadding="0" cellspacing="0">
+  <% let n = 0; %> <% for (const [key, value] of Object.entries(responseArray))
+  { %>
+  <tr class="<%= n % 2 === 0 ? 'shade' : '' %>">
+    <td>
+      <strong><em><%= key %></em></strong>
+    </td>
+    <td><%= value %></td>
+  </tr>
+  <% n++; %> <% } %>
+</table>

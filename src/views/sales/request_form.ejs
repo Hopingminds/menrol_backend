@@ -1,0 +1,292 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head><title>ICICI Merchant Solution Sale API</title>
+<meta http-equiv='Content-Type' content='text/html; charset=iso-8859-1'>
+<link rel="stylesheet" type="text/css" href="/styles/style.css" media="screen">
+</head>
+<body>
+
+
+<center><h1>Sale API</h1></center>
+<style>
+    .error {
+        color: red;
+    }
+</style>
+<hr>
+<!-- The "Pay Now!" button submits the form and gives control to the form 'action' parameter -->
+    <form id="payment_form" action="/initiate_payment" method="post" accept-charset="ISO-8859-1">
+
+<!-- get user input -->
+        <table width="80%" align="center" border="0" cellpadding='0' cellspacing='0'>
+        <tr>
+            <td colspan="2"><h3>ORDER PARAMETERS:</h3></td>
+        </tr>
+        <tr>
+            <td><strong><em>Merchant Txn. Ref. No: *</em></strong></td>
+            <td><input class="textbox"type="text" name="TxnRefNo" id="TxnRefNo" value="" size="50" maxlength="50" required /></td>
+        </tr>
+        <tr>
+            <td><strong><em>Amount in rupees: *</em></strong></td>
+            <td><input class="textbox"type="text"  name="Amount" id="Amount" value="" pattern="[1-9]\d*(\.\d+)?" title="Please enter a number greater than or equal to 1" size="50" maxlength="12" required /></td>
+        </tr>
+        <tr>
+            <td><strong><em>Currency Code: *</em></strong></td>
+            <td><input class="textbox"type="text"  name="Currency" id="Currency" value="" size="50" maxlength="40" required  /></td>
+        </tr>
+        <tr>
+            <td><strong><em>Merchant Id: *</em></strong></td>
+            <td><input class="textbox"type="text"  name="MerchantId" id="MerchantId" value="" size="50" maxlength="50" required  /></td>
+        </tr>
+        <tr>
+            <td><strong><em>Terminal Id: *</em></strong></td>
+            <td><input class="textbox"type="text"  name="TerminalId" id="TerminalId" value="" size="50" maxlength="50" required /></td>
+        </tr>
+        <tr>
+            <td><strong><em>Txn Type: *</em></strong></td>
+            <td><input class="textbox"type="text"  name="TxnType" id="TxnType" value="Pay" size="50" maxlength="50"  readonly="readonly" required /></td>
+        </tr>
+        <tr>
+            <td><strong><em>Order Info: </em></strong></td>
+            <td>
+                <input class="textbox"type="text"  name="OrderInfo" id="OrderInfo"  size="50" maxlength="50"/>
+                <br/>
+                <span class="error" id="orderInfoError"></span>
+            </td>
+        </tr>
+        <tr>
+            <td><strong><em>Email: </em></strong></td>
+            <td>
+                <input class="textbox"type="text"  name="Email" id="Email" value="" size="50" maxlength="50"/>
+                <br/>
+                <span class="error" id="emailError"></span>
+            </td>
+        </tr>
+        <tr>
+            <td><strong><em>FirstName: </em></strong></td>
+            <td><input class="textbox" type="text"  name="FirstName" id="FirstName" value=""/></td>
+        </tr>
+        <tr>
+            <td><strong><em>LastName: </em></strong></td>
+            <td><input class="textbox" type="text"  name="LastName" id="LastName" value=""/></td>
+        </tr>
+        <tr>
+            <td><strong><em>Street: </em></strong></td>
+            <td><input class="textbox" type="text"  name="Street" id="Street" value=""/></td>
+        </tr>
+        <tr>
+            <td><strong><em>City: </em></strong></td>
+            <td><input class="textbox" type="text"  name="City" id="City" value=""/></td>
+        </tr>
+        <tr>
+            <td><strong><em>State: </em></strong></td>
+            <td><input class="textbox" type="text"  name="State" id="State" value=""/></td>
+        </tr>
+        <tr>
+            <td><strong><em>ZIP: </em></strong></td>
+            <td><input class="textbox" type="text"  name="ZIP" id="ZIP" value=""/></td>
+        </tr>
+        <tr>
+            <td><strong><em>Phone: </em></strong></td>
+            <td>
+                <input class="textbox" type="text"  name="Phone" id="Phone" value="" size="50" placeholder="1234567890" pattern="[0-9]{10}" maxlength="10"/>
+                <br/>
+                <span class="error" id="phoneError"></span>
+            </td>
+        </tr>
+		<tr>
+          <td colspan="2"><h3>USER DEFINED FIELDS: </h3></td>
+        </tr>
+        <tr>
+            <td><strong><em>User Defined Field 01: </em></strong></td>
+            <td>
+                <input class="textbox"type="text"  name="UDF01" id="UDF01" value="" size="50" maxlength="50"/>
+                <br/>
+                <span class="error" id="UDF01Error"></span>
+            </td>
+        </tr>
+        <tr>
+            <td><strong><em>User Defined Field 02: </em></strong></td>
+            <td>
+                <input class="textbox"type="text"  name="UDF02" id="UDF02" value="" size="50" maxlength="50"/>
+                <br/>
+                <span class="error" id="UDF02Error"></span>
+            </td>
+        </tr>
+        <tr>
+            <td><strong><em>User Defined Field 03: </em></strong></td>
+            <td>
+                <input class="textbox"type="text"  name="UDF03" id="UDF03" value="" size="50" maxlength="50"/>
+                <br/>
+                <span class="error" id="UDF03Error"></span>
+            </td>
+        </tr>
+        <tr>
+            <td><strong><em>User Defined Field 04: </em></strong></td>
+            <td>
+                <input class="textbox"type="text"  name="UDF04" id="UDF04" value="" size="50" maxlength="50"/>
+                <br/>
+                <span class="error" id="UDF04Error"></span>
+            </td>
+        </tr>
+        <tr>
+            <td><strong><em>User Defined Field 05: </em></strong></td>
+            <td>
+                <input class="textbox"type="text"  name="UDF05" id="UDF05" value="" size="50" maxlength="50"/>
+                <br/>
+                <span class="error" id="UDF05Error"></span>
+            </td>
+        </tr>
+        <tr>
+            <td><strong><em>User Defined Field 06: </em></strong></td>
+            <td>
+                <input class="textbox"type="text"  name="UDF06" id="UDF06" value="" size="50" maxlength="50"/>
+                <br/>
+                <span class="error" id="UDF06Error"></span>
+            </td>
+        </tr>
+        <tr>
+            <td><strong><em>User Defined Field 07: </em></strong></td>
+            <td>
+                <input class="textbox"type="text"  name="UDF07" id="UDF07" value="" size="50" maxlength="50"/>
+                <br/>
+                <span class="error" id="UDF07Error"></span>
+            </td>
+        </tr>
+        <tr>
+            <td><strong><em>User Defined Field 08: </em></strong></td>
+            <td>
+                <input class="textbox"type="text"  name="UDF08" id="UDF08" value="" size="50" maxlength="50"/>
+                <br/>
+                <span class="error" id="UDF08Error"></span>
+            </td>
+        </tr>
+        <tr>
+            <td><strong><em>User Defined Field 09: </em></strong></td>
+            <td>
+                <input class="textbox"type="text"  name="UDF09" id="UDF09" value="" size="50" maxlength="50"/>
+                <br/>
+                <span class="error" id="UDF09Error"></span>
+            </td>
+        </tr>
+        <tr>
+            <td><strong><em>User Defined Field 10: </em></strong></td>
+            <td>
+                <input class="textbox"type="text"  name="UDF10" id="UDF10" value="" size="50" maxlength="50"/>
+                <br/>
+                <span class="error" id="UDF10Error"></span>
+            </td>
+       </tr>
+        <tr>    
+            <td>&nbsp;</td>
+            <td><input type="submit" name="SubButL" value="Submit"/></td>
+        </tr>
+	</table>
+    </form>
+
+    <script>
+        document.getElementById('payment_form').onsubmit = function(e) {
+            e.preventDefault();
+
+            var email = document.getElementById('Email').value;
+            var emailError = document.getElementById('emailError');
+            var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (email != '' && !emailPattern.test(email)) emailError.textContent = 'Please enter a valid email address.';
+            else emailError.textContent = '';
+
+            var phone = document.getElementById('Phone').value;
+            var phoneError = document.getElementById('phoneError');
+            var phonePattern = /^[0-9]{10}$/;
+            if (phone != '' && !phonePattern.test(phone)) phoneError.textContent = 'Please enter a valid 10-digit phone number.';
+            else phoneError.textContent = '';
+
+            var orderInfo = document.getElementById('OrderInfo').value;
+            var orderInfoError = document.getElementById('orderInfoError');
+            var orderInfoPattern = /^[a-zA-Z0-9]+$/;
+            if (orderInfo != '' && !orderInfoPattern.test(orderInfo)) orderInfoError.textContent = 'Please enter a valid Order ID (only letters and numbers are allowed).';
+            else orderInfoError.textContent = '';
+
+            var UDFPattern = /^[a-zA-Z0-9 ,/?:@&=+$_.!~*')(#;}{[\]<>-]+$/
+
+            var UDF01 = document.getElementById('UDF01').value;
+            var UDF01Error = document.getElementById('UDF01Error');
+            if (UDF01 != '' && !UDFPattern.test(UDF01)) UDF01Error.textContent = 'Please enter a valid input.';
+            else UDF01Error.textContent = '';
+
+            var UDF02 = document.getElementById('UDF02').value;
+            var UDF02Error = document.getElementById('UDF02Error');
+            if (UDF02 != '' && !UDFPattern.test(UDF02)) UDF02Error.textContent = 'Please enter a valid input.';
+            else UDF02Error.textContent = '';
+
+            var UDF03 = document.getElementById('UDF03').value;
+            var UDF03Error = document.getElementById('UDF03Error');
+            if (UDF03 != '' && !UDFPattern.test(UDF03)) UDF03Error.textContent = 'Please enter a valid input.';
+            else UDF03Error.textContent = '';
+
+            var UDF04 = document.getElementById('UDF04').value;
+            var UDF04Error = document.getElementById('UDF04Error');
+            if (UDF04 != '' && !UDFPattern.test(UDF04)) UDF04Error.textContent = 'Please enter a valid input.';
+            else UDF04Error.textContent = '';
+
+            var UDF05 = document.getElementById('UDF05').value;
+            var UDF05Error = document.getElementById('UDF05Error');
+            if (UDF05 != '' && !UDFPattern.test(UDF05)) UDF05Error.textContent = 'Please enter a valid input.';
+            else UDF05Error.textContent = '';
+
+            var UDF06 = document.getElementById('UDF06').value;
+            var UDF06Error = document.getElementById('UDF06Error');
+            if (UDF06 != '' && !UDFPattern.test(UDF06)) UDF06Error.textContent = 'Please enter a valid input.';
+            else UDF06Error.textContent = '';
+
+            var UDF07 = document.getElementById('UDF07').value;
+            var UDF07Error = document.getElementById('UDF07Error');
+            if (UDF07 != '' && !UDFPattern.test(UDF07)) UDF07Error.textContent = 'Please enter a valid input.';
+            else UDF07Error.textContent = '';
+
+            var UDF08 = document.getElementById('UDF08').value;
+            var UDF08Error = document.getElementById('UDF08Error');
+            if (UDF08 != '' && !UDFPattern.test(UDF08)) UDF08Error.textContent = 'Please enter a valid input.';
+            else UDF08Error.textContent = '';
+
+            var UDF09 = document.getElementById('UDF09').value;
+            var UDF09Error = document.getElementById('UDF09Error');
+            if (UDF09 != '' && !UDFPattern.test(UDF09)) UDF09Error.textContent = 'Please enter a valid input.';
+            else UDF09Error.textContent = '';
+
+            var UDF10 = document.getElementById('UDF10').value;
+            var UDF10Error = document.getElementById('UDF10Error');
+            if (UDF10 != '' && !UDFPattern.test(UDF10)) UDF10Error.textContent = 'Please enter a valid input.';
+            else UDF10Error.textContent = '';
+
+            if(
+                phoneError.textContent != ''
+                || emailError.textContent != ''
+                || orderInfoError.textContent != ''
+                || UDF01Error.textContent != ''
+                || UDF02Error.textContent != ''
+                || UDF03Error.textContent != ''
+                || UDF04Error.textContent != ''
+                || UDF05Error.textContent != ''
+                || UDF06Error.textContent != ''
+                || UDF07Error.textContent != ''
+                || UDF08Error.textContent != ''
+                || UDF09Error.textContent != ''
+                || UDF10Error.textContent != ''
+            ) {
+                // do nothing
+            }else{
+                e.target.submit()
+            }
+        }
+
+        document.getElementById('Email').onblur = function() {
+            
+        };
+
+        document.getElementById('Phone').onblur = function() {
+            
+        };
+    </script>
+</body>
+</html>
+

@@ -7,6 +7,8 @@ import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
+import path from 'path';
+import { fileURLToPath } from "url";
 
 // Import application middleware 
 import corsOptions from '../configs/cors.config.js';
@@ -25,6 +27,7 @@ import UserRoutes from '../routes/User.routes.js'
 import AdminRoutes from '../routes/Admin.routes.js'
 import OrderRoutes from '../routes/Order.routes.js'
 import SubscriptionRoutes from '../routes/Subscription.routes.js'
+import PaymentRoutes from '../routes/Payment.routes.js'
 
 // Load environment variables from .env file
 dotenv.config();
@@ -49,6 +52,13 @@ app.use(crossOrigin(corsOptions));
 
 // Parse cookies from requests
 app.use(cookieParser());
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Set EJS as the view engine
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "../views"));
 
 // Parse request bodies
 app.use(bodyParser.json());
@@ -93,6 +103,7 @@ app.use('/api/v1', CommonRoutes);
 app.use('/api/v1', ServicesRoutes);
 app.use('/api/v1', ServiceProviderRoutes);
 app.use('/api/v1', SubscriptionRoutes);
+app.use('/api/v1', PaymentRoutes);
 
 // 404 ~ not found error handler
 app.use((req, res, _next) => {

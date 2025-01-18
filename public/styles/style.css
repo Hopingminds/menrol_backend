@@ -1,0 +1,20 @@
+* { font-family:sans-serif; }
+h1       { font-size:20px; font-weight:600; margin-bottom:5px; color:#08185A;}
+h2       { font-size:12px; font-weight:100; margin-top:5px; color:#08185A;}
+h2.co    { font-size:24px; font-weight:100; margin-top:5px; margin-bottom:5px; color:#08185A}
+h3       { font-size:16px; font-weight:100; margin-top:5px; margin-bottom:5px; color:#08185A}
+h3.co    { font-size:16px; font-weight:100; margin-top:5px; margin-bottom:5px; color:#FFFFFF}
+body     { font-size:10px; background-color:#FFFFFF; color:#08185A}
+th       { font-size:8px; font-weight:bold; background-color:#E1E1E1; padding-top:0.5em; padding-bottom:0.5em;  color:#08185A}
+.shade   { height:30px; background-color:#E1E1E1 }
+.title   { height:30px; background-color:#C1C1C1 }
+td       { padding-bottom: 5px;font-size:12px;  color:#08185A }
+td.red   { font-size:12px;  color:#FF0066 }
+td.green { font-size:12px;  color:#008800 }
+p        { font-size:12px; color:#FFFFFF }
+div.bl   { font-size:12px;  color:#C1C1C1 }
+div.red  { font-size:12px;  color:#FF0066 }
+li       { font-size:12px;  color:#FF0066 }
+input    { font-size:12px;  color:#08185A; line-height:20px; }
+select   { font-size:12px;  color:#08185A; }
+textarea { font-size:12px;  color:#08185A;}
