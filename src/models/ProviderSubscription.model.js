@@ -11,6 +11,10 @@ export const ProviderSubscriptionSchema = new mongoose.Schema({
         ref: 'Subscription',
         required: true,
     },
+    trxnId: {
+        type: String,
+        required: true
+    },
     startDate: {
         type: Date,
         default: Date.now,

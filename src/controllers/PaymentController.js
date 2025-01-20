@@ -136,9 +136,12 @@ export async function initiatePurchaseSubcription(req, res) {
         const endDate = new Date(startDate);
         endDate.setMonth(endDate.getMonth() + durationMonths);
 
+        const trxnId = `SUB-${subscription.planName.slice(0, 3).toUpperCase()}-${Date.now()}`;
+
         const providerSubscription = new ProviderSubscriptionModel({
             provider: userID,
             subscription: subscriptionId,
+            trxnId,
             startDate,
             endDate,
             status: 'active',
@@ -159,9 +162,9 @@ export async function initiatePurchaseSubcription(req, res) {
             mcc: CONSTANTS.MCC,
             returnURL: `${CONSTANTS.RETURNURL}CheckSubcriptionPaymentResponse`,
             TxnType: "Pay",
-            txnRefNo: `SUB-${subscription.planName.slice(0, 3).toUpperCase()}-${Date.now()}`,
+            txnRefNo: trxnId,
             currency: 356,
-            orderInfo: providerSubscription._id,
+            orderInfo: "orderInfo",
             phone: provider.phone.toString(),
             email: provider.email || 'noEmail@default.com',
             firstName: provider.name,
@@ -170,6 +173,7 @@ export async function initiatePurchaseSubcription(req, res) {
             state: "state",
             city: "city",
             zip: "765432",
+            UDF01: providerSubscription._id,
         });
         
         if (response.status == true) {
@@ -198,13 +202,12 @@ export async function CheckSubcriptionPaymentResponse(req, res) {
         const saltKey = CONSTANTS.SECURE_SECRET;
 
         const data = icici.checkResponse({ encKey, saltKey, paymentResponse })
-        console.log(data.data.OrderInfo);
 
         if(data.data.ResponseCode !== "00"){
             return res.status(402).json({ success: false, message: 'Payment failed' });
         }
 
-        const providerSubscription = await ProviderSubscriptionModel.findById(data.data.OrderInfo);
+        const providerSubscription = await ProviderSubscriptionModel.findById(data.data.UDF01);
         if (!providerSubscription) {
             return res.status(404).json({ success: false, message: 'Provider Subscription order not found' });
         }
