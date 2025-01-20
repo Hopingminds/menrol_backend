@@ -50,6 +50,9 @@ export const ServiceProviderSchema = new mongoose.Schema({
             default: [0,0],
         }
     },
+    address:{
+        type:String,
+    },
     rating: { type: Number, max: 5 },
     totalEarnings: { type: Number, default: 0 },
     totalOrders: { type: Number, default: 0 },
