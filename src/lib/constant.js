@@ -13,5 +13,5 @@ export const CONSTANTS = {
         "https://payuatrbac.icicibank.com/accesspoint/v1/24520/createRefundFromMerchantKit",
     STATUSURL:
         "https://payuatrbac.icicibank.com/accesspoint/v1/24520/checkStatusMerchantKit",
-    RETURNURL: "http://localhost:3027/api/v1/paymentCheckResponse",
+    RETURNURL: "http://localhost:3027/api/v1/",
 };

@@ -19,6 +19,9 @@ export const ProviderSubscriptionSchema = new mongoose.Schema({
         type: Date,
         required: true,
     },
+    respOrderInfo:{
+        type: Object,
+    },
     status: {
         type: String,
         enum: ['active', 'expired', 'cancelled'],
