@@ -93,8 +93,8 @@ function extractAddressDetails(address) {
 
 export async function initiatePurchaseSubcription(req, res) {
     try {
-        // const { userID } = req.sp;
-        const { subscriptionId, userID } = req.body;
+        const { userID } = req.sp;
+        const { subscriptionId } = req.body;
 
         if (!subscriptionId) {
             return res.status(400).json({ success: false, message: "Subscription ID is required." });
