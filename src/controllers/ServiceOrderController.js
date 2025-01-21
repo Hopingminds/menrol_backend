@@ -188,6 +188,8 @@ export async function getUpdatesforUserRasiedOrder(req, res) {
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
         res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 
         // Function to send updates only for this user
         const sendUpdate = async (update) => {
