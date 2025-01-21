@@ -1,3 +1,4 @@
+import corsOptions from "../configs/cors.config.js";
 import notificationEmitter from "../events/notificationEmitter.js";
 import ServiceOrderModel from "../models/ServiceOrder.model.js";
 import ServiceProviderModel from "../models/ServiceProvider.model.js";
@@ -186,6 +187,7 @@ export async function getUpdatesforUserRasiedOrder(req, res) {
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
+        res.setHeader('Access-Control-Allow-Origin', '*');
 
         // Function to send updates only for this user
         const sendUpdate = async (update) => {
