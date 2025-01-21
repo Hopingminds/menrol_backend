@@ -203,13 +203,16 @@ export async function CheckSubcriptionPaymentResponse(req, res) {
 
         const data = icici.checkResponse({ encKey, saltKey, paymentResponse })
 
-        if(data.data.ResponseCode !== "00"){
-            return res.status(402).json({ success: false, message: 'Payment failed' });
-        }
-
         const providerSubscription = await ProviderSubscriptionModel.findById(data.data.UDF01);
         if (!providerSubscription) {
             return res.status(404).json({ success: false, message: 'Provider Subscription order not found' });
+        }
+
+        if(data.data.ResponseCode !== "00"){
+            providerSubscription.respOrderInfo = data.data;
+            providerSubscription.paymentStatus = 'failed';
+            await providerSubscription.save();
+            return res.status(402).json({ success: false, message: 'Payment failed' });
         }
 
         providerSubscription.respOrderInfo = data.data;
