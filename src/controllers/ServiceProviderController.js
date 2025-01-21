@@ -8,6 +8,7 @@ import ServiceOrderModel from '../models/ServiceOrder.model.js';
 import ServiceProviderOrderModel from '../models/ServiceProviderOrder.model.js';
 import ServiceProviderPaymentsModel from '../models/ServiceProviderPayments.model.js';
 import { populateSubcategoryInServiceOrder, populateSubcategoryInServiceProviderOrder } from '../lib/populateSubcategory.js';
+import notificationEmitter from '../events/notificationEmitter.js';
 
 
 /** POST: http://localhost:3027/api/v1/verifyForExistingServiceProvide
@@ -983,6 +984,9 @@ export async function acceptServiceOrder(req, res) {
         }
 
         await order.save();
+
+        // Notify clients about the update
+        notificationEmitter.emit('userUpdatedForRaisedOrder', { userID: order.user, message: 'message emitted for userUpdatedForRasiedOrder.' });
 
         return res.status(200).json({
             success: true,
