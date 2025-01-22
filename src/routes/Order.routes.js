@@ -16,7 +16,6 @@ router.route('/confirmEndWorkingOtp').post(SPAuth, ServiceProviderController.con
 router.route('/getUserAllOrders').get(UserAuth, ServiceOrderController.getUserAllOrders);
 router.route('/getUserOrderDetails').get(UserAuth, ServiceOrderController.getUserOrderDetails);
 router.route('/getUserRasiedOrders').get(UserAuth, ServiceOrderController.getUserRasiedOrders);
-router.route('/getUpdatesforUserRasiedOrder').get(ServiceOrderController.getUpdatesforUserRasiedOrder);
 router.route('/fetchEligibleServiceProviders').get(UserAuth, ServiceOrderController.fetchEligibleServiceProviders);
 router.route('/updateOrderSubcategoryViewer').put(SPAuth, ServiceProviderController.updateOrderSubcategoryViewer);
 

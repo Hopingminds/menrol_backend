@@ -178,69 +178,6 @@ export async function getUserRasiedOrders(req, res) {
     }
 }
 
-export async function getUpdatesforUserRasiedOrder(req, res) {
-    try {
-        const { userID } = req.query;
-        // const { userID } = req.user;
-
-        // Set headers for SSE
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-
-        // Function to send updates only for this user
-        const sendUpdate = async (update) => {
-            console.log('sending raised order update');
-            const order = await ServiceOrderModel.findOne({
-                user: userID,
-                orderRaised: true
-            }).populate({
-                path: 'serviceRequest.service',
-                model: 'Services',
-                select: '-subcategory'
-            })
-                .populate({
-                    path: 'serviceRequest.subcategory.viewers.serviceProvider',
-                    select: 'name profileImage'
-                })
-                .populate({
-                    path: 'serviceRequest.subcategory.serviceProviders.serviceProviderId',
-                    select: 'name profileImage'
-                });
-            if (update.userID.toString() === userID && order) {
-                const response = {
-                    success: true,
-                    order: order
-                };
-                res.write(`data: ${JSON.stringify(response)}\n\n`);
-            }
-            else if (update.userID.toString() === userID && !order) {
-                const response = {
-                    success: false,
-                    message: "No Raised order found"
-                };
-                console.log("No Raised order found");
-                
-                res.write(`data: ${JSON.stringify(response)}\n\n`);
-            }
-        };
-
-        // Register event listener for the specific user
-        notificationEmitter.on('userUpdatedForRaisedOrder', sendUpdate);
-
-        // Handle client disconnect
-        req.on('close', () => {
-            notificationEmitter.off('userUpdatedForRaisedOrder', sendUpdate);
-            res.end();
-        });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
-    }
-}
 
 export async function fetchEligibleServiceProviders(req, res) {
     try {
