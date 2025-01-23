@@ -10,7 +10,7 @@ import { deleteRequestOnOrderCompletion, getOrderValue } from "../services/order
 export async function purchaseService(req, res) {
     try {
         const { userID } = req.user;
-        const { totalPayedAmount, location, address } = req.body;
+        const { location, address } = req.body;
 
         const serviceRequest = await ServiceRequestModel.findOne({ user: userID });
         if (!serviceRequest) {
@@ -23,10 +23,6 @@ export async function purchaseService(req, res) {
         }
         console.log(orderValue.totalAmount);
 
-        if (totalPayedAmount < orderValue.totalAmount) {
-            return res.status(400).json({ success: false, message: "Complete the full payment", Amounttopaid: orderValue.totalAmount });
-        }
-
         const newServiceOrder = new ServiceOrderModel({
             user: userID,
             serviceRequest: serviceRequest.requestedServices,
@@ -34,7 +30,7 @@ export async function purchaseService(req, res) {
             address,
             payment: {
                 totalamount: orderValue.totalAmount,
-                paidAmount: totalPayedAmount,
+                paidAmount: 0,
                 dueAmount: 0, // Since full payment is made
                 status: 'completed',
                 method: 'app',
