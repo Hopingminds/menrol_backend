@@ -25,6 +25,7 @@ router.route('/uploadWork').put(SPAuth, uploadServiceProviderWorkImage.array('ga
 router.route('/uploadServiceProviderDocuments').put(SPAuth, uploadServiceProviderAadharCard.single('aadharCard'), ServiceProviderController.uploadServiceProviderDocuments);
 router.route('/updateSPLocation').put(SPAuth, ServiceProviderController.updateSPLocation);
 router.route('/updateServiceProviderSkills').put(SPAuth, ServiceProviderController.updateServiceProviderSkills);
+router.route('/changeWorkStatus').put(SPAuth, ServiceProviderController.changeWorkStatus);
 
 // DELETE ROUTES
 router.route('/removeServiceProviderSubcategory').delete(SPAuth, ServiceProviderController.removeServiceProviderSubcategory);

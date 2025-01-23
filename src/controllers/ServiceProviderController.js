@@ -310,6 +310,25 @@ export async function updateSPLocation(req, res) {
     }
 }
 
+export async function changeWorkStatus(req, res) {
+    try {
+        const { userID } = req.sp;
+
+        const provider = await ServiceProviderModel.findById(userID);
+        if (!provider) {
+            return res.status(404).json({ success: false, message: "No Service Provider found." })
+        }
+
+        provider.isOnline = !provider.isOnline;
+        await provider.save();
+
+        res.status(200).json({ success: true, message: "Work status changed successfully." });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
 /** GET: http://localhost:3027/api/v1/getServicesRequestNearSPLocation?radius=10 */
 export async function getServicesRequestNearSPLocation(req, res) {
     try {
