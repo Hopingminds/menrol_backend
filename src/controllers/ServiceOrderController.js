@@ -5,7 +5,7 @@ import ServiceProviderModel from "../models/ServiceProvider.model.js";
 import ServiceProviderOrderModel from "../models/ServiceProviderOrder.model.js";
 import ServiceRequestModel from "../models/ServiceRequest.model.js";
 import ServicesModel from "../models/Services.model.js";
-import { deleteRequestOnOrderCompletion, getOrderValue } from "../services/order.service.js";
+import { deleteRequestOnOrderCompletion, getOrderValue, getUpdateOrderValue } from "../services/order.service.js";
 
 export async function purchaseService(req, res) {
     try {
@@ -31,9 +31,9 @@ export async function purchaseService(req, res) {
             payment: {
                 totalamount: orderValue.totalAmount,
                 paidAmount: 0,
-                dueAmount: 0, // Since full payment is made
-                status: 'completed',
-                method: 'app',
+                dueAmount: orderValue.totalAmount, // Since full payment is not made
+                status: 'pending',
+                paymentmethod: 'app',
                 paymentDate: new Date(),
             },
             orderRaised: true
@@ -376,6 +376,20 @@ export async function updateOrderTiming(req, res) {
 
         serviceProviderOrdersubcategory.scheduledTiming.startTime = scheduledTiming.startTime || serviceProviderOrdersubcategory.scheduledTiming.startTime;
         serviceProviderOrdersubcategory.scheduledTiming.endTime = scheduledTiming.endTime || serviceProviderOrdersubcategory.scheduledTiming.endTime;
+
+        const orderValue = await getUpdateOrderValue(userID, order._id);
+        if (!orderValue.success) {
+            throw new Error('Failed to get order value.');
+        }
+        console.log(orderValue.totalAmount);
+        
+        await order.save();
+        await serviceProviderOrder.save();
+
+        order.payment.totalamount = orderValue.totalAmount;
+        order.payment.dueAmount = orderValue.totalAmount;
+        serviceProviderOrder.paymentDetails.totalAmount = orderValue.totalAmount;
+        serviceProviderOrder.paymentDetails.dueAmount = orderValue.totalAmount;
 
         await order.save();
         await serviceProviderOrder.save();
