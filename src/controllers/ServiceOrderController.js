@@ -377,14 +377,13 @@ export async function updateOrderTiming(req, res) {
         serviceProviderOrdersubcategory.scheduledTiming.startTime = scheduledTiming.startTime || serviceProviderOrdersubcategory.scheduledTiming.startTime;
         serviceProviderOrdersubcategory.scheduledTiming.endTime = scheduledTiming.endTime || serviceProviderOrdersubcategory.scheduledTiming.endTime;
 
+        await order.save();
+        await serviceProviderOrder.save();
+
         const orderValue = await getUpdateOrderValue(userID, order._id);
         if (!orderValue.success) {
             throw new Error('Failed to get order value.');
         }
-        console.log(orderValue.totalAmount);
-        
-        await order.save();
-        await serviceProviderOrder.save();
 
         order.payment.totalamount = orderValue.totalAmount;
         order.payment.dueAmount = orderValue.totalAmount;
@@ -394,7 +393,7 @@ export async function updateOrderTiming(req, res) {
         await order.save();
         await serviceProviderOrder.save();
 
-        return res.status(200).json({ success: true, message: "Service timing updated successfully." });
+        return res.status(200).json({ success: true, message: "Service timing updated successfully.", order });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
