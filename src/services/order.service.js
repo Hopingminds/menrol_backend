@@ -24,9 +24,9 @@ export async function getOrderValue(userId) {
 
                 // Calculate duration based on requestType
                 if (requestType === "hourly") {
-                    calculatedDuration = Math.abs((endTime - startTime) / (1000 * 60 * 60)); // duration in hours
+                    calculatedDuration = Math.ceil(Math.abs((endTime - startTime) / (1000 * 60 * 60))); // duration in hours
                 } else if (requestType === "daily") {
-                    calculatedDuration = Math.abs((endTime - startTime) / (1000 * 60 * 60 * 24)); // duration in days
+                    calculatedDuration = Math.ceil(Math.abs((endTime - startTime) / (1000 * 60 * 60 * 24))); // duration in days
                 }
 
                 // Accumulate the total amount
@@ -66,7 +66,6 @@ export async function getUpdateOrderValue(userId, orderId) {
         order.serviceRequest.forEach((service) => {
             service.subcategory.forEach((subcat) => {
                 const { selectedAmount, workersRequirment, requestType, scheduledTiming } = subcat;
-                console.log(selectedAmount, workersRequirment, requestType, scheduledTiming);
                 
                 if (!scheduledTiming?.startTime || !scheduledTiming?.endTime) {
                     throw new Error('Start time or end time is missing in the subcategory');
@@ -79,11 +78,10 @@ export async function getUpdateOrderValue(userId, orderId) {
 
                 // Calculate duration based on requestType
                 if (requestType === "hourly") {
-                    calculatedDuration = Math.abs((endTime - startTime) / (1000 * 60 * 60)); // duration in hours
+                    calculatedDuration = Math.ceil(Math.abs((endTime - startTime) / (1000 * 60 * 60))); // duration in hours
                 } else if (requestType === "daily") {
-                    calculatedDuration = Math.abs((endTime - startTime) / (1000 * 60 * 60 * 24)); // duration in days
+                    calculatedDuration = Math.ceil(Math.abs((endTime - startTime) / (1000 * 60 * 60 * 24))); // duration in days
                 }
-                console.log("calculatedDuration",calculatedDuration);
                 
                 // Accumulate the total amount
                 totalAmount += selectedAmount * workersRequirment * calculatedDuration;
