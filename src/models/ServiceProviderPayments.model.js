@@ -34,8 +34,8 @@ export const ServiceProviderPaymentsSchema = new mongoose.Schema({
         },
         paymentMethod: {
             type: String,
-            enum: ["bank_transfer", "upi"],
-            default: "bank_transfer",
+            enum: ["bank_transfer", "upi", "cash"],
+            default: "cash",
         },
         paymentStatus: {
             type: String,

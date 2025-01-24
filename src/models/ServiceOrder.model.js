@@ -69,6 +69,10 @@ const ServiceOrderSchema = new mongoose.Schema({
                                 enum: ['pending', 'confirmed', 'cancelled', 'inProgress', 'completed'],
                                 default: 'pending',
                             },
+                            paymentReceived:{
+                                type: Boolean,
+                                default: false,
+                            }
                         }
                     ],
                 }

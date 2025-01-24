@@ -11,6 +11,7 @@ router.route('/purchaseService').post(UserAuth, ServiceOrderController.purchaseS
 router.route('/acceptServiceOrder').post(SPAuth, ServiceProviderController.acceptServiceOrder);
 router.route('/confirmStartWorkingOtp').post(SPAuth, ServiceProviderController.confirmStartWorkingOtp);
 router.route('/confirmEndWorkingOtp').post(SPAuth, ServiceProviderController.confirmEndWorkingOtp);
+router.route('/paymentCollectForOrder').post(SPAuth, ServiceProviderController.paymentCollectForOrder);
 
 // GET ROUTES
 router.route('/getUserAllOrders').get(UserAuth, ServiceOrderController.getUserAllOrders);

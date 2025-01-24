@@ -321,6 +321,8 @@ export async function cancelOrderRequest(req, res) {
 
         await order.save();
 
+        notificationEmitter.emit('providerUpdatedForCancelledOrder', { userID: order.user, message: 'message emitted for userUpdatedForRasiedOrder.' });
+
         return res.status(200).json({ success: true, message: "Order Request cancelled successfully", order });
     } catch (error) {
         console.error(error);

@@ -1237,12 +1237,12 @@ export async function confirmEndWorkingOtp(req, res) {
             return res.status(404).json({ success: false, message: "Subcategory not found in the service request." });
         }
 
-        // if (subcategory.status !== 'inProgress' || subcategory.status === 'completed') {
-        //     return res.status(400).json({
-        //         success: false,
-        //         message: `Subcategory is ${subcategory.status}.`,
-        //     });
-        // }
+        if (subcategory.status !== 'inProgress' || subcategory.status === 'completed') {
+            return res.status(400).json({
+                success: false,
+                message: `Subcategory is ${subcategory.status}.`,
+            });
+        }
 
         //check service provider is in the subcategory
         const serviceProviderSubcategory = subcategory.serviceProviders.find(s => s.serviceProviderId.toString() === userID);
@@ -1250,11 +1250,7 @@ export async function confirmEndWorkingOtp(req, res) {
             return res.status(404).json({ success: false, message: 'Service Provider Not Found for the order request' });
         }
 
-        subcategory.status = 'completed';
         serviceProviderSubcategory.status = 'completed';
-
-
-        let otpVerified = false;
 
         if (endOtp !== subcategory.requestOperation.endOtp) {
             return res.status(400).json({ success: false, message: 'Invalid OTP.' });
@@ -1278,21 +1274,94 @@ export async function confirmEndWorkingOtp(req, res) {
         serviceProviderOrdersubcategory.workConfirmation.workEnded = true;
         serviceProviderOrdersubcategory.workConfirmation.endTime = Date.now();
 
-        console.log(subcategory.selectedAmount);
-        
-        const serviceProviderPayments = new ServiceProviderPaymentsModel({
-            serviceProviderId: userID,
-            serviceOrderId: orderId,
-            orderServiceId: serviceId,
-            orderSubcategoryId: subcategoryId,
-            totalEarned: subcategory.selectedAmount
-        });
-
-        await serviceProviderPayments.save();
         await order.save();
         await serviceProviderOrder.save();
 
         return res.status(200).json({ success: true, message: "Service ended successfully.", serviceProviderOrder });
+    } catch (error) {
+        console.error(error.message);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function paymentCollectForOrder(req, res) {
+    try {
+        const { userID } = req.sp;
+        const { orderId, serviceId, subcategoryId, paymentReceived } = req.body;
+
+        if (!orderId || !serviceId || !subcategoryId || !paymentReceived) {
+            return res.status(404).json({ success: false, message: 'Missing Required fields.' })
+        }
+        const serviceProviderOrder = await ServiceProviderOrderModel.findOne({ ServiceProvider: userID, serviceOrderId: orderId });
+        if (!serviceProviderOrder) {
+            return res.status(404).json({ success: false, message: 'service Provider Order Not Found.' });
+        }
+        
+        const order = await ServiceOrderModel.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order Not Found.' });
+        }
+        
+        const serviceRequest = order.serviceRequest.find(req => req.service.toString() === serviceId);
+        if (!serviceRequest) {
+            return res.status(404).json({ success: false, message: "Service not found in the order." });
+        }
+        
+        const subcategory = serviceRequest.subcategory.find(
+            sub => sub.subcategoryId.toString() === subcategoryId
+        );
+        if (!subcategory) {
+            return res.status(404).json({ success: false, message: "Subcategory not found in the service request." });
+        }
+
+        //check service provider is in the subcategory
+        const serviceProviderSubcategory = subcategory.serviceProviders.find(s => s.serviceProviderId.toString() === userID);
+        if (!serviceProviderSubcategory) {
+            return res.status(404).json({ success: false, message: 'Service Provider Not Found for the order request' });
+        }
+
+        if(serviceProviderSubcategory.paymentReceived){
+            return res.status(400).json({ success: false, message: 'Payment already received.' });
+        }
+        serviceProviderSubcategory.paymentReceived = paymentReceived;
+
+        const serviceProvidersCompletedOrder = subcategory.serviceProviders.filter(s => s.status === 'completed')
+        if(serviceProvidersCompletedOrder.length === subcategory.workersRequirment){
+            subcategory.status = 'completed';
+        }
+
+        const serviceProviderOrderserviceRequest = serviceProviderOrder.servicesProvided.find(req => req.serviceId.toString() === serviceId);
+        if (!serviceProviderOrderserviceRequest) {
+            return res.status(404).json({ success: false, message: "Service not found for service Provider order." });
+        }
+
+        const serviceProviderOrdersubcategory = serviceProviderOrderserviceRequest.subcategory.find(
+            sub => sub.subcategoryId.toString() === subcategoryId
+        );
+        if (!serviceProviderOrdersubcategory) {
+            return res.status(404).json({ success: false, message: "Subcategory not found for service Provider order." });
+        }
+
+        serviceProviderOrdersubcategory.serviceStatus = 'completed';
+
+        const serviceProviderPayment = new ServiceProviderPaymentsModel({
+            serviceProviderId: userID,
+            serviceOrderId: orderId,
+            orderServiceId: serviceId,
+            orderSubcategoryId: subcategoryId,
+            totalEarned: subcategory.selectedAmount,
+            paymentCredited: paymentReceived,
+            paymentDetails:{
+                paymentStatus: paymentReceived?"credited":"pending"
+            },
+            paymentCreditDate: new Date(new Date().getTime() + (5 * 60 + 30) * 60 * 1000)
+        });
+
+        await serviceProviderPayment.save();
+        await order.save();
+        await serviceProviderOrder.save();
+
+        return res.status(200).json({ success: true, message: "Service Payment Collected.", order, serviceProviderOrder });
     } catch (error) {
         console.error(error.message);
         return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
