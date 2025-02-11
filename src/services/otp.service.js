@@ -48,8 +48,6 @@ export async function sendOTP(mobileNo) {
         
         return { success: true, message: 'OTP sent successfully' };
     } catch (error) {
-        console.log(error);
-        
         return { success: false, message: 'OTP sent failed' };
     }
 }
