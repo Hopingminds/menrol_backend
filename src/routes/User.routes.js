@@ -24,5 +24,6 @@ router.route('/updateUserAddress').put(UserAuth, UsersController.updateUserAddre
 // DELETE ROUTES
 router.route('/deleteUserAddress').delete(UserAuth, UsersController.deleteUserAddress);
 router.route('/removeServiceRequest').delete(UserAuth, ServiceRequestController.removeServiceRequest);
+router.route('/deleteUserAccount').delete(UserAuth, UsersController.deleteUserAccount);
 
 export default router;

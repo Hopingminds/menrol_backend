@@ -266,3 +266,20 @@ export async function deleteUserAddress(req, res) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
     }
 }
+
+export async function deleteUserAccount(req, res) {
+    try {
+        const { userID } = req.user;
+        const user = await UserModel.findById(userID);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "Service Provider not found" });
+        }
+
+        await UserModel.findByIdAndDelete(userID);
+
+        return res.status(200).json({ success: true, message: "Service Provider account deleted successfully" });
+    } catch (error) {
+        console.error(error.message);
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}

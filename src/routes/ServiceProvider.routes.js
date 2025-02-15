@@ -29,5 +29,6 @@ router.route('/changeWorkStatus').put(SPAuth, ServiceProviderController.changeWo
 
 // DELETE ROUTES
 router.route('/removeServiceProviderSubcategory').delete(SPAuth, ServiceProviderController.removeServiceProviderSubcategory);
+router.route('/deleteServiceProviderAccount').delete(SPAuth, ServiceProviderController.deleteServiceProviderAccount);
 
 export default router;
