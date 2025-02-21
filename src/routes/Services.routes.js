@@ -20,6 +20,7 @@ router.route('/searchSubCategoryInAllCategories').get(ServicesController.searchS
 // PUT ROUTES
 router.route('/editServiceData').put(AdminAuth, ServicesController.editServiceData);
 router.route('/editServiceSubCategory').put(AdminAuth, ServicesController.editServiceSubCategory);
+router.route('/editServiceSubCategoryImage').put(AdminAuth, uploadSubCategoryImage.single('subcategoryImages'), ServicesController.editServiceSubCategoryImage);
 router.route('/addSubCategory').put(AdminAuth, uploadSubCategoryImage.array('subcategoryImages', 10), ServicesController.addSubCategory);
 router.route('/addCategoryImage').put(AdminAuth, uploadCategoryImage.single('categoryImage'), ServicesController.addCategoryImage);
 

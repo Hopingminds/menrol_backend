@@ -480,6 +480,43 @@ export async function editServiceSubCategory(req, res) {
     }
 }
 
+export async function editServiceSubCategoryImage(req, res) {
+    try {
+        const { serviceID, subcategoryId } = req.body;
+        
+        if (!serviceID || !subcategoryId) {
+            return res.status(400).json({ success: false, message: "serviceID and Subcategory ID is required for updating" });
+        }
+
+        // Check if a file was uploaded
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No image file provided' });
+        }
+
+        const service = await ServicesModel.findById(serviceID);
+        if (!service) {
+            return res.status(404).json({ success: false, message: "Service not found" });
+        }
+
+        // Find the existing subcategory by _id
+        const existingSubcategory = service.subcategory.find(sub => sub._id.toString() === subcategoryId);
+
+        if (!existingSubcategory) {
+            return res.status(404).json({ success: false, message: "Subcategory not found" });
+        }
+
+        // Update the existing subcategory fields
+        existingSubcategory.image = req.file.location;
+
+        // Save the updated service document
+        await service.save();
+
+        return res.status(200).json({ success: true, message: "Subcategory Image updated successfully", service });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+    }
+}
+
 export async function getCategory(req, res) {
     try {
         const { categoryId } = req.query;
