@@ -30,6 +30,17 @@ export const UserSchema = new mongoose.Schema({
     dob: {
         type: Date,
     },
+    bio: {
+        type: String
+    },
+    isOnline: {
+        type: Boolean,
+        default: true
+    },
+    newUser: {
+        type: Boolean,
+        default: true
+    },
     SavedAddresses: [{
         location: {
             type: {
@@ -39,7 +50,7 @@ export const UserSchema = new mongoose.Schema({
             },
             coordinates: {
                 type: [Number], // [longitude, latitude]
-                default: [0,0],
+                default: [0, 0],
             }
         },
         address: {
@@ -50,6 +61,16 @@ export const UserSchema = new mongoose.Schema({
         type: String,
         enum: ["English", "Hindi"],
         default: "English",
+    },
+    userRole: {
+        type: String,
+        enum: ["serviceProvider", "user"],
+        default: "user",
+    },
+    serviceProviderInfo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ServiceProviderInfo",
+        default: null,
     }
 }, { timestamps: true });
 

@@ -3,9 +3,10 @@ const router = Router()
 
 import * as PaymentController from '../controllers/PaymentController.js'
 import SPAuth from '../middleware/ServiceProvide.Auth.js';
+import UserAuth from '../middleware/User.Auth.js';
 
 // POST ROUTES
-router.route('/initiatePurchaseSubcription').post(SPAuth, PaymentController.initiatePurchaseSubcription);
+router.route('/initiatePurchaseSubcription').post(UserAuth, PaymentController.initiatePurchaseSubcription);
 router.route('/initiatePayment').post(PaymentController.initiatePayment);
 
 // GET ROUTES

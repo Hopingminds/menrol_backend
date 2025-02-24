@@ -9,6 +9,9 @@ import ServiceProviderOrderModel from '../models/ServiceProviderOrder.model.js';
 import ServiceProviderPaymentsModel from '../models/ServiceProviderPayments.model.js';
 import { populateSubcategoryInServiceOrder, populateSubcategoryInServiceProviderOrder } from '../lib/populateSubcategory.js';
 import notificationEmitter from '../events/notificationEmitter.js';
+import UserModel from '../models/User.model.js';
+import ServiceProviderInfoModel from '../models/ServiceProviderInfo.model.js';
+import { populate } from 'dotenv';
 
 
 /** POST: http://localhost:3027/api/v1/verifyForExistingServiceProvide
@@ -80,13 +83,40 @@ export async function verifyServiceProviderOtp(req, res) {
             return res.status(400).json({ success: false, message: 'Invalid OTP', validotp: false });
         }
 
-        // Create new service provider
-        let serviceProvider = await ServiceProviderModel.findOne({ phone });
-        if (!serviceProvider) {
-            serviceProvider = await ServiceProviderModel.create({ phone, newUser: true });
+        let serviceProvider = await UserModel.findOne({ phone });
+
+        if (serviceProvider && serviceProvider.isAccountBlocked) {
+            return res.status(403).json({ success: false, message: 'Service provider has been blocked' });
         }
-        else if(serviceProvider.isAccountBlocked){
-            return res.status(403).json({ success: false, message: 'ServiceProvider has been blocked' });
+
+        let serviceProviderInfo;
+
+        if (!serviceProvider) {
+            // Create new service provider
+            serviceProvider = await UserModel.create({ 
+                phone, 
+                newUser: true, 
+                userRole: 'serviceProvider' 
+            });
+
+            // Create corresponding ServiceProviderInfo entry
+            serviceProviderInfo = await ServiceProviderInfoModel.create({
+                user: serviceProvider._id,  // Link to the user
+            });
+
+            // Save ServiceProviderInfo _id in UserModel
+            serviceProvider.serviceProviderInfo = serviceProviderInfo._id;
+            await serviceProvider.save();
+        } else {
+            // Ensure there's a corresponding ServiceProviderInfo entry
+            serviceProviderInfo = await ServiceProviderInfoModel.findOne({ user: serviceProvider._id });
+            if (!serviceProviderInfo) {
+                serviceProviderInfo = await ServiceProviderInfoModel.create({ user: serviceProvider._id });
+                
+                // Update UserModel with the newly created ServiceProviderInfo ID
+                serviceProvider.serviceProviderInfo = serviceProviderInfo._id;
+                await serviceProvider.save();
+            }
         }
 
         // Generate JWT token for new user
@@ -94,13 +124,13 @@ export async function verifyServiceProviderOtp(req, res) {
             { 
                 userID: serviceProvider._id,
                 phone: serviceProvider.phone,
-                role: 'serviceProvider'
+                role: serviceProvider.userRole,
             }, 
             process.env.JWT_SECRET, 
             { expiresIn: '7d' }
         );
 
-        await ServiceProviderModel.updateOne({ phone }, { authToken: token });
+        await UserModel.updateOne({ phone }, { authToken: token });
 
         // Clean up OTP record
         if (phone !== '9898989898') {
@@ -128,65 +158,31 @@ export async function verifyServiceProviderOtp(req, res) {
  */
 export async function completeServiceProviderDetails(req, res){
     try {
-        const { userID } = req.sp; // Assuming the service provider ID is passed as a route parameter.
-        const updateData = req.body; // Data to update is sent in the request body.
+        const { userID } = req.sp;
+        const { serviceProviderInfo, ...userUpdateData } = req.body;
 
-        // Fetch and update the service provider details
-        const updatedServiceProvider = await ServiceProviderModel.findOneAndUpdate(
-            { _id: userID },
-            {
-                ...updateData,
-            },
-            { new: true, runValidators: true } // Return the updated document and validate data.
-        );
+        // Run both updates concurrently
+        const [updatedUser, updatedServiceProviderInfo] = await Promise.all([
+            UserModel.findByIdAndUpdate(userID, { $set: userUpdateData }, { new: true, runValidators: true }),
+            serviceProviderInfo ? 
+                ServiceProviderInfoModel.findOneAndUpdate(
+                    { user: userID },
+                    { $set: serviceProviderInfo },
+                    { new: true, runValidators: true, upsert: true }
+                ) 
+                : null
+        ]);
 
-        if (!updatedServiceProvider) {
+        if (!updatedUser) {
             return res.status(404).json({ success: false, message: "Service provider not found." });
         }
 
-        // Save the updated subcategories to the Services collection
-        if (updateData.category && updateData.subcategory) {
-            const service = await ServicesModel.findOne({ category: updateData.category });
-
-            if (service) {
-                // Update only the counts for new subcategories added by the user
-                updateData.subcategory.forEach((newSub) => {
-                    const existingSub = service.subcategory.find(sub => sub.title === newSub.title);
-                    if (existingSub) {
-                        if (newSub.pricing && newSub.pricing.pricingtype) {
-                            switch (newSub.pricing.pricingtype) {
-                                case 'daily':
-                                    existingSub.dailyWageWorker = (existingSub.dailyWageWorker || 0) + 1;
-                                    break;
-                                case 'hourly':
-                                    existingSub.hourlyWorker = (existingSub.hourlyWorker || 0) + 1;
-                                    break;
-                                case 'contract':
-                                    existingSub.contractWorker = (existingSub.contractWorker || 0) + 1;
-                                    break;
-                            }
-                        }
-                    } else {
-                        // Add new subcategory with initial counts
-                        service.subcategory.push({
-                            ...newSub,
-                            dailyWageWorker: newSub.pricing.pricingtype === 'daily' ? 1 : 0,
-                            hourlyWorker: newSub.pricing.pricingtype === 'hourly' ? 1 : 0,
-                            contractWorker: newSub.pricing.pricingtype === 'contract' ? 1 : 0,
-                        });
-                    }
-                });
-
-                await service.save();
-            } else {
-                return res.status(404).json({ success: false, message: "Service category not found." });
-            }
-        }
-
+        // Populate serviceProviderInfo in the updated user document
+        await updatedUser.populate('serviceProviderInfo');
         return res.status(200).json({
             success: true,
             message: "Service provider details updated successfully.",
-            data: updatedServiceProvider,
+            data: updatedUser,
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
@@ -198,7 +194,7 @@ export async function completeServiceProviderDetails(req, res){
  *  "profile": "file"
  * }
  */
-export async function uploadUserProfile(req, res) {
+export async function uploadUserProfile(req, res) {  //Removed
     try {
         const { userID } = req.sp;
         
@@ -214,7 +210,7 @@ export async function uploadUserProfile(req, res) {
         const profileImageURL = req.file.location;
 
         // Find the user and update their profile image URL
-        const user = await ServiceProviderModel.findById(userID);
+        const user = await UserModel.findById(userID);
         if (!user) {
             return res.status(404).json({ 
                 success: false, 
@@ -246,35 +242,34 @@ export async function uploadWork(req, res) {
         const { userID } = req.sp;
 
         if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "No files uploaded." 
+            return res.status(400).json({
+                success: false,
+                message: "No files uploaded."
             });
         }
 
         // Extract the locations (URLs) of the uploaded files
         const fileLocations = req.files.map(file => file.location);
 
-        // Find the user and update their profile image URL
-        const user = await ServiceProviderModel.findById(userID);
-        if (!user) {
-            return res.status(404).json({ 
-                success: false, 
-                message: "User not found." 
+        const serviceProviderInfo = await ServiceProviderInfoModel.findOne({ user: userID });
+        if (!serviceProviderInfo) {
+            return res.status(404).json({
+                success: false,
+                message: "Service provider information not found."
             });
         }
 
         // Add the file locations to the gallery
-        user.gallery = user.gallery.concat(fileLocations);
-        await user.save();
+        serviceProviderInfo.gallery = serviceProviderInfo.gallery.concat(fileLocations);
+        await serviceProviderInfo.save();
 
-        return res.status(200).json({ 
-            success: true, 
-            message: "Files uploaded and gallery updated successfully.", 
-            data: { gallery: user.gallery } 
+        return res.status(200).json({
+            success: true,
+            message: "Files uploaded and gallery updated successfully.",
+            data: { gallery: serviceProviderInfo.gallery }
         });
     } catch (error) {
-        return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
     }
 }
 
@@ -296,8 +291,8 @@ export async function updateSPLocation(req, res) {
         }
 
         // Find and update the user's location
-        const updatedProvider = await ServiceProviderModel.findByIdAndUpdate(
-            userID  ,
+        const updatedProvider = await ServiceProviderInfoModel.findOneAndUpdate(
+            {user: userID}  ,
             { location: { type: "Point", coordinates: [longitude, latitude] } },
             { new: true, runValidators: true } // Return the updated document and run schema validators
         );
@@ -316,7 +311,7 @@ export async function changeWorkStatus(req, res) {
     try {
         const { userID } = req.sp;
 
-        const provider = await ServiceProviderModel.findById(userID);
+        const provider = await UserModel.findById(userID);
         if (!provider) {
             return res.status(404).json({ success: false, message: "No Service Provider found." })
         }
@@ -339,13 +334,13 @@ export async function getServicesRequestNearSPLocation(req, res) {
         const { radius = 5 } = req.query; // Default radius: 5 km
 
         // Find the service provider by ID and get their location
-        const serviceProvider = await ServiceProviderModel.findById(userID);
+        const serviceProvider = await UserModel.findById(userID).populate('serviceProviderInfo');
 
         if (!serviceProvider) {
             return res.status(404).json({ message: "Service provider not found." });
         }
 
-        const { coordinates } = serviceProvider.location;
+        const { coordinates } = serviceProvider.serviceProviderInfo.location;
         
         if (!coordinates || coordinates.length !== 2) {
             return res.status(400).json({ message: "Invalid or missing location for the service provider." });
@@ -370,7 +365,7 @@ export async function getServicesRequestNearSPLocation(req, res) {
                     status: { $in: ["pending"] }, // Status inside subcategory
                 },
             }, // Filter for relevant statuses
-        }).populate({path:'user' , select:'-SavedAddresses -dob -isAccountBlocked'})
+        }).populate({path:'user' , select:'-SavedAddresses -dob -isAccountBlocked -serviceProviderInfo -newUser'})
         .populate({ path: 'serviceRequest.service', select: '-subcategory' })
 
         const requests = await Promise.all(
@@ -395,9 +390,12 @@ export async function getServiceProvider(req, res) {
     try {
         const { userID } = req.sp;
 
-        const serviceProvider = await ServiceProviderModel.findById(userID).populate({
-            path: 'skills.category',
-            select: '-subcategory',
+        const serviceProvider = await UserModel.findById(userID).populate({
+            path: 'serviceProviderInfo',
+            populate: {
+                path: 'skills.category',
+                select: '-subcategory',
+            }
         });
 
         if (!serviceProvider) {
@@ -405,7 +403,7 @@ export async function getServiceProvider(req, res) {
         }
 
         // Step 1: Fetch all unique category IDs from the service provider's skills
-        const categoryIds = serviceProvider.skills
+        const categoryIds = serviceProvider.serviceProviderInfo.skills
             .filter(skill => skill.category && skill.category._id)
             .map(skill => skill.category._id);
 
@@ -419,7 +417,7 @@ export async function getServiceProvider(req, res) {
         }, {});
 
         // Step 4: Transform skills to replace subcategories using the lookup map
-        const updatedSkills = serviceProvider.skills.map(skill => {
+        const updatedSkills = serviceProvider.serviceProviderInfo.skills.map(skill => {
             if (skill.category && skill.category._id) {
                 const categorySubcategories = subcategoryLookup[skill.category._id.toString()] || [];
         
@@ -451,8 +449,8 @@ export async function getServiceProvider(req, res) {
         
         const responseObject = serviceProvider.toObject();
         // Remove the `skills` field
-        delete responseObject.skills;
-        responseObject.skills = updatedSkills;
+        delete responseObject.serviceProviderInfo.skills;
+        responseObject.serviceProviderInfo.skills = updatedSkills;
 
         res.status(200).json({ success: true, message: "Service provider retrieved successfully.", data: responseObject });
     } catch (error) {
@@ -469,12 +467,12 @@ export async function uploadServiceProviderDocuments(req, res) {
             return res.status(400).json({ success: false, message: "No file uploaded." });
         }
 
-        const serviceProvider = await ServiceProviderModel.findById(userID);
-        if(!serviceProvider){
+        const serviceProvider = await ServiceProviderInfoModel.findOne({ user: userID });
+        if (!serviceProvider) {
             return res.status(404).json({ success: false, message: "Service provider not found" });
         }
 
-        serviceProvider.aadharCard.Image = req.file.location;
+        serviceProvider.aadharCard.image = req.file.location;
         await serviceProvider.save();
 
         res.status(200).json({ success: true, message: "Service provider documents uploaded successfully" });
@@ -492,7 +490,7 @@ export async function completeServiceProviderRegistrationDetails(req, res) {
             return res.status(404).json({ success: false, message: "Please fill name, profile Image the fields." });
         }
 
-        const serviceProvider = await ServiceProviderModel.findById(userID);
+        const serviceProvider = await UserModel.findById(userID);
         if(!serviceProvider){
             return res.status(404).json({ success: false, message: "Service provider not found" });
         }
@@ -522,7 +520,7 @@ export async function addServiceProviderSkills(req, res) {
             });
         }
 
-        const provider = await ServiceProviderModel.findById(userID);
+        const provider = await UserModel.findById(userID).populate('serviceProviderInfo');
         if (!provider) {
             return res.status(404).json({
                 success: false,
@@ -530,9 +528,24 @@ export async function addServiceProviderSkills(req, res) {
             });
         }
 
+        // Ensure serviceProviderInfo exists
+        if (!provider.serviceProviderInfo) {
+            return res.status(400).json({
+                success: false,
+                message: "Service provider information not found.",
+            });
+        }
+
+        const serviceProviderInfo = await ServiceProviderInfoModel.findById(provider.serviceProviderInfo);
+        if (!serviceProviderInfo) {
+            return res.status(400).json({
+                success: false,
+                message: "Service provider details missing.",
+            });
+        }
         // Merge new skills with existing ones
         for (const skill of skills) {
-            const categoryIndex = provider.skills.findIndex(
+            const categoryIndex = serviceProviderInfo.skills.findIndex(
                 (existingSkill) =>
                     existingSkill.category.toString() === skill.category
             );
@@ -541,14 +554,14 @@ export async function addServiceProviderSkills(req, res) {
             if (categoryIndex !== -1) {
                 // If the category exists, merge subcategories
                 for (const subcategory of skill.subcategories) {
-                    const subcategoryIndex = provider.skills[categoryIndex].subcategories.findIndex(
+                    const subcategoryIndex = serviceProviderInfo.skills[categoryIndex].subcategories.findIndex(
                         (existingSub) =>
                             existingSub.subcategory.toString() === subcategory.subcategory
                     );
         
                     if (subcategoryIndex !== -1) {
                         // Update pricing if subcategory exists
-                        provider.skills[categoryIndex].subcategories[
+                        serviceProviderInfo.skills[categoryIndex].subcategories[
                             subcategoryIndex
                         ].pricing = subcategory.pricing;
                     } else {
@@ -567,7 +580,7 @@ export async function addServiceProviderSkills(req, res) {
                                     matchingSub.contractWorker = (matchingSub.contractWorker || 0) + 1;
                                 }
                             }
-                            provider.skills[categoryIndex].subcategories.push(subcategory);
+                            serviceProviderInfo.skills[categoryIndex].subcategories.push(subcategory);
                             await service.save();
                         }        
                     }
@@ -591,18 +604,18 @@ export async function addServiceProviderSkills(req, res) {
                         }
                     }
                 }
-                provider.skills.push(skill);
+                serviceProviderInfo.skills.push(skill);
                 await service.save();
             }
         }            
 
         // Save the updated provider
-        await provider.save();
+        await serviceProviderInfo.save();
 
         res.status(200).json({
             success: true,
             message: "Skills added successfully.",
-            data: provider.skills,
+            data: serviceProviderInfo.skills,
         });
     } catch (error) {
         console.log(error.message);
@@ -622,7 +635,7 @@ export async function updateServiceProviderSkills(req, res) {
             });
         }
 
-        const provider = await ServiceProviderModel.findById(userID);
+        const provider = await UserModel.findById(userID).populate('serviceProviderInfo');
         if (!provider) {
             return res.status(404).json({
                 success: false,
@@ -630,8 +643,24 @@ export async function updateServiceProviderSkills(req, res) {
             });
         }
 
+        // Ensure serviceProviderInfo exists
+        if (!provider.serviceProviderInfo) {
+            return res.status(400).json({
+                success: false,
+                message: "Service provider information not found.",
+            });
+        }
+
+        const serviceProviderInfo = await ServiceProviderInfoModel.findById(provider.serviceProviderInfo);
+        if (!serviceProviderInfo) {
+            return res.status(400).json({
+                success: false,
+                message: "Service provider details missing.",
+            });
+        }
+
         for (const skill of skills) {
-            const categoryIndex = provider.skills.findIndex(
+            const categoryIndex = serviceProviderInfo.skills.findIndex(
                 (existingSkill) =>
                     existingSkill.category.toString() === skill.category
             );
@@ -639,16 +668,16 @@ export async function updateServiceProviderSkills(req, res) {
             if (categoryIndex !== -1) {
                 // If the category exists, update subcategories
                 for (const subcategory of skill.subcategories) {
-                    const subcategoryIndex = provider.skills[categoryIndex].subcategories.findIndex(
+                    const subcategoryIndex = serviceProviderInfo.skills[categoryIndex].subcategories.findIndex(
                         (existingSub) =>
                             existingSub.subcategory.toString() === subcategory.subcategory
                     );
 
                     if (subcategoryIndex !== -1) {
                         // Update pricing for existing subcategory
-                        provider.skills[categoryIndex].subcategories[subcategoryIndex].pricing =
+                        serviceProviderInfo.skills[categoryIndex].subcategories[subcategoryIndex].pricing =
                             subcategory.pricing ||
-                            provider.skills[categoryIndex].subcategories[subcategoryIndex].pricing;
+                            serviceProviderInfo.skills[categoryIndex].subcategories[subcategoryIndex].pricing;
                     } else {
                         // Add new subcategory if not present
                         const matchingSub = service.subcategory.find(
@@ -665,14 +694,14 @@ export async function updateServiceProviderSkills(req, res) {
                                     matchingSub.contractWorker = (matchingSub.contractWorker || 0) + 1;
                                 }
                             }
-                            provider.skills[categoryIndex].subcategories.push(subcategory);
+                            serviceProviderInfo.skills[categoryIndex].subcategories.push(subcategory);
                             await service.save();
                         }
                     }
                 }
 
                 // Remove subcategories not present in the new skills array
-                provider.skills[categoryIndex].subcategories = provider.skills[categoryIndex].subcategories.filter(
+                serviceProviderInfo.skills[categoryIndex].subcategories = serviceProviderInfo.skills[categoryIndex].subcategories.filter(
                     (existingSub) =>
                         skill.subcategories.some(
                             (subcategory) =>
@@ -681,8 +710,8 @@ export async function updateServiceProviderSkills(req, res) {
                 );
 
                 // If no subcategories remain, remove the skill
-                if (provider.skills[categoryIndex].subcategories.length === 0) {
-                    provider.skills.splice(categoryIndex, 1);
+                if (serviceProviderInfo.skills[categoryIndex].subcategories.length === 0) {
+                    serviceProviderInfo.skills.splice(categoryIndex, 1);
                 }
             } else {
                 // If the category doesn't exist, add the new skill
@@ -703,22 +732,22 @@ export async function updateServiceProviderSkills(req, res) {
                         }
                     }
                 }
-                provider.skills.push(skill);
+                serviceProviderInfo.skills.push(skill);
                 await service.save();
             }
         }
         // Remove categories not present in the updated skills array
-        provider.skills = provider.skills.filter((existingSkill) =>
+        serviceProviderInfo.skills = serviceProviderInfo.skills.filter((existingSkill) =>
             skills.some((updatedSkill) => updatedSkill.category === existingSkill.category.toString())
         );
 
         // Save the updated provider
-        await provider.save();
+        await serviceProviderInfo.save();
 
         res.status(200).json({
             success: true,
             message: "Skills updated successfully.",
-            data: provider.skills,
+            data: serviceProviderInfo.skills,
         });
     } catch (error) {
         console.error(error.message);
@@ -738,7 +767,7 @@ export async function removeServiceProviderSubcategory(req, res) {
             });
         }
 
-        const provider = await ServiceProviderModel.findById(userID);
+        const provider = await UserModel.findById(userID).populate('serviceProviderInfo');
         if (!provider) {
             return res.status(404).json({
                 success: false,
@@ -746,8 +775,24 @@ export async function removeServiceProviderSubcategory(req, res) {
             });
         }
 
+        // Ensure serviceProviderInfo exists
+        if (!provider.serviceProviderInfo) {
+            return res.status(400).json({
+                success: false,
+                message: "Service provider information not found.",
+            });
+        }
+
+        const serviceProviderInfo = await ServiceProviderInfoModel.findById(provider.serviceProviderInfo);
+        if (!serviceProviderInfo) {
+            return res.status(400).json({
+                success: false,
+                message: "Service provider details missing.",
+            });
+        }
+
         // Find the category index
-        const categoryIndex = provider.skills.findIndex(
+        const categoryIndex = serviceProviderInfo.skills.findIndex(
             (skill) => skill.category.toString() === category
         );
 
@@ -759,7 +804,7 @@ export async function removeServiceProviderSubcategory(req, res) {
         }
 
         // Find the subcategory index
-        const subcategoryIndex = provider.skills[categoryIndex].subcategories.findIndex(
+        const subcategoryIndex = serviceProviderInfo.skills[categoryIndex].subcategories.findIndex(
             (sub) => sub.subcategory.toString() === subcategory
         );
 
@@ -771,20 +816,20 @@ export async function removeServiceProviderSubcategory(req, res) {
         }
 
         // Remove the subcategory
-        provider.skills[categoryIndex].subcategories.splice(subcategoryIndex, 1);
+        serviceProviderInfo.skills[categoryIndex].subcategories.splice(subcategoryIndex, 1);
 
         // If no subcategories are left, remove the category
-        if (provider.skills[categoryIndex].subcategories.length === 0) {
-            provider.skills.splice(categoryIndex, 1);
+        if (serviceProviderInfo.skills[categoryIndex].subcategories.length === 0) {
+            serviceProviderInfo.skills.splice(categoryIndex, 1);
         }
 
         // Save the updated provider
-        await provider.save();
+        await serviceProviderInfo.save();
 
         res.status(200).json({
             success: true,
             message: "Subcategory removed successfully.",
-            data: provider.skills,
+            data: serviceProviderInfo.skills,
         });
     } catch (error) {
         console.error(error.message);
@@ -1175,9 +1220,6 @@ export async function confirmStartWorkingOtp(req, res) {
         subcategory.status = 'inProgress';
         serviceProviderSubcategory.status = 'inProgress';
 
-
-        let otpVerified = false;
-        
         if (startOtp !== subcategory.requestOperation.startOtp) {
             return res.status(400).json({ success: false, message: 'Invalid OTP.' });
         }
@@ -1373,7 +1415,7 @@ export async function paymentCollectForOrder(req, res) {
 export async function deleteServiceProviderAccount(req, res) {
     try {
         const { userID } = req.sp;
-        const serviceProvider = await ServiceProviderModel.findById(userID);
+        const serviceProvider = await UserModel.findById(userID);
         if (!serviceProvider) {
             return res.status(404).json({ success: false, message: "Service Provider not found" });
         }

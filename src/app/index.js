@@ -28,6 +28,7 @@ import AdminRoutes from '../routes/Admin.routes.js'
 import OrderRoutes from '../routes/Order.routes.js'
 import SubscriptionRoutes from '../routes/Subscription.routes.js'
 import PaymentRoutes from '../routes/Payment.routes.js'
+import PostsRoutes from '../routes/Posts.routes.js'
 
 // Load environment variables from .env file
 dotenv.config();
@@ -104,6 +105,7 @@ app.use('/api/v1', ServicesRoutes);
 app.use('/api/v1', ServiceProviderRoutes);
 app.use('/api/v1', SubscriptionRoutes);
 app.use('/api/v1', PaymentRoutes);
+app.use('/api/v1', PostsRoutes);
 
 // 404 ~ not found error handler
 app.use((req, res, _next) => {

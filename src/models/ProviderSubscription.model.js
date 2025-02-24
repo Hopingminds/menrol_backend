@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 export const ProviderSubscriptionSchema = new mongoose.Schema({
     provider: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'ServiceProvider',
+        ref: 'User',
         required: true,
     },
     subscription: {

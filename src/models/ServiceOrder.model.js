@@ -53,7 +53,7 @@ const ServiceOrderSchema = new mongoose.Schema({
                         {
                             serviceProvider: {
                                 type: mongoose.Schema.Types.ObjectId,
-                                ref: 'ServiceProvider'
+                                ref: 'User'
                             },  
                         }
                     ],
@@ -61,7 +61,7 @@ const ServiceOrderSchema = new mongoose.Schema({
                         {
                             serviceProviderId: {
                                 type: mongoose.Schema.Types.ObjectId,
-                                ref: 'ServiceProvider',
+                                ref: 'User',
                                 required: true,
                             },
                             status: {

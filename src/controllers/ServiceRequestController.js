@@ -207,7 +207,7 @@ export async function addServiceRequest(req, res) {
     }
 }
 
-export async function acceptServiceRequest(req, res) {
+export async function acceptServiceRequest(req, res) {  //NOT IN USE UPDATE IT BEFORE USING
     try {
         const { userID } = req.sp;
         const { requestId } = req.body;
@@ -225,7 +225,7 @@ export async function acceptServiceRequest(req, res) {
         }
 
         // Check if the service provider exists
-        const serviceProvider = await ServiceProviderModel.findById(userID);
+        const serviceProvider = await UserModel.findById(userID);
 
         if (!serviceProvider) {
             return res.status(404).json({ success: false, message: "Service provider not found." });

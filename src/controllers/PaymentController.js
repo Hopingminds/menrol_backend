@@ -3,6 +3,8 @@ import { CONSTANTS } from '../lib/constant.js';
 import ProviderSubscriptionModel from "../models/ProviderSubscription.model.js";
 import SubscriptionModel from "../models/Subscription.model.js";
 import ServiceProviderModel from "../models/ServiceProvider.model.js";
+import UserModel from "../models/User.model.js";
+import ServiceProviderInfoModel from "../models/ServiceProviderInfo.model.js";
 
 const icici = new ICICI();
 
@@ -105,13 +107,16 @@ export async function initiatePurchaseSubcription(req, res) {
             return res.status(404).json({ success: false, message: "Subscription not found." });
         }
 
-        const provider = await ServiceProviderModel.findById(userID);
+        const provider = await UserModel.findById(userID).populate('serviceProviderInfo');
+
         if (!provider) {
             return res.status(404).json({ success: false, message: "Service provider not found." });
         }
 
-        if (provider.activeSubscription) {
-            const currentSubscription = await ProviderSubscriptionModel.findById(provider.activeSubscription);
+        console.log(provider.serviceProviderInfo.activeSubscription);
+        
+        if (provider.serviceProviderInfo.activeSubscription) {
+            const currentSubscription = await ProviderSubscriptionModel.findById(provider.ServiceProviderInfo.activeSubscription);
             if (currentSubscription) {
                 const currentDate = new Date();
                 if (currentSubscription.endDate > currentDate) {
@@ -219,7 +224,7 @@ export async function CheckSubcriptionPaymentResponse(req, res) {
         providerSubscription.paymentStatus = 'paid';
         await providerSubscription.save();
         
-        const provider = await ServiceProviderModel.findById(providerSubscription.provider);
+        const provider = await ServiceProviderInfoModel.findById({ user: providerSubscription.provider });
         if (!provider) {
             return res.status(404).json({ success: false, message: 'Provider not found for the Subscription order' });
         }

@@ -8,17 +8,17 @@ import SPAuth from '../middleware/ServiceProvide.Auth.js';
 
 // POST ROUTES
 router.route('/purchaseService').post(UserAuth, ServiceOrderController.purchaseService);
-router.route('/acceptServiceOrder').post(SPAuth, ServiceProviderController.acceptServiceOrder);
-router.route('/confirmStartWorkingOtp').post(SPAuth, ServiceProviderController.confirmStartWorkingOtp);
-router.route('/confirmEndWorkingOtp').post(SPAuth, ServiceProviderController.confirmEndWorkingOtp);
-router.route('/paymentCollectForOrder').post(SPAuth, ServiceProviderController.paymentCollectForOrder);
+router.route('/acceptServiceOrder').post(UserAuth, ServiceProviderController.acceptServiceOrder);
+router.route('/confirmStartWorkingOtp').post(UserAuth, ServiceProviderController.confirmStartWorkingOtp);
+router.route('/confirmEndWorkingOtp').post(UserAuth, ServiceProviderController.confirmEndWorkingOtp);
+router.route('/paymentCollectForOrder').post(UserAuth, ServiceProviderController.paymentCollectForOrder);
 
 // GET ROUTES
 router.route('/getUserAllOrders').get(UserAuth, ServiceOrderController.getUserAllOrders);
 router.route('/getUserOrderDetails').get(UserAuth, ServiceOrderController.getUserOrderDetails);
 router.route('/getUserRasiedOrders').get(UserAuth, ServiceOrderController.getUserRasiedOrders);
 router.route('/fetchEligibleServiceProviders').get(UserAuth, ServiceOrderController.fetchEligibleServiceProviders);
-router.route('/updateOrderSubcategoryViewer').put(SPAuth, ServiceProviderController.updateOrderSubcategoryViewer);
+router.route('/updateOrderSubcategoryViewer').put(UserAuth, ServiceProviderController.updateOrderSubcategoryViewer);
 
 // PUT ROUTES
 router.route('/updateOrderTiming').put(UserAuth, ServiceOrderController.updateOrderTiming);

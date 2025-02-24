@@ -130,3 +130,18 @@ export const uploadUserProfileImage = multer({
         contentType: multerS3.AUTO_CONTENT_TYPE
     })
 });
+
+
+export const uploadPost = multer({
+    storage: multerS3({
+        s3: s3,
+        acl: "public-read",
+        bucket: BUCKET,
+        key: function (req, file, cb) {
+            var newFileName = Date.now() + "-" + file.originalname;
+            var fullPath = 'Posts/'+ newFileName;
+            cb(null, fullPath);
+        },
+        contentType: multerS3.AUTO_CONTENT_TYPE
+    })
+})

@@ -32,7 +32,7 @@ const limiter = rateLimit({
                 verbose: false
             });
 
-            const logMessage = `[${currentDateTime()}]\tTITLE: TOO MANY REQUEST\tMETHOD: ${req.method}\tURL: ${req.url}\tCLIENT: ${req.headers['user-agent']}\n`;
+            const logMessage = `[${currentDateTime()}]\tIP: ${req.ip}\tTITLE: TOO MANY REQUEST\tMETHOD: ${req.method}\tURL: ${req.url}\tCLIENT: ${req.headers['user-agent']}\n`;
 
             apiLimiterRotator.write(logMessage, 'utf8');
         } catch (err) {

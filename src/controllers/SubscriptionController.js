@@ -1,6 +1,8 @@
 import ProviderSubscriptionModel from "../models/ProviderSubscription.model.js";
 import ServiceProviderModel from "../models/ServiceProvider.model.js";
+import ServiceProviderInfoModel from "../models/ServiceProviderInfo.model.js";
 import SubscriptionModel from "../models/Subscription.model.js";
+import UserModel from "../models/User.model.js";
 
 export async function createSubscription(req, res) {
     try {
@@ -194,7 +196,7 @@ export async function purchaseSubscription(req, res) {
         }
 
         // Fetch service provider
-        const provider = await ServiceProviderModel.findById(userID);
+        const provider = await ServiceProviderInfoModel.findOne({ user: userID });
         if (!provider) {
             return res.status(404).json({ success: false, message: "Service provider not found." });
         }

@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const ServiceProviderOrderSchema = new mongoose.Schema({
     ServiceProvider: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'ServiceProvider',
+        ref: 'User',
         required: true,
     },
     serviceOrderId: {

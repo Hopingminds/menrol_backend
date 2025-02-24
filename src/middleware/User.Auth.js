@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import 'dotenv/config'
 import UserModel from "../models/User.model.js";
 
-export default async function UserAuth(req,res,next) {
+export default async function UserAuth(req, res, next) {
     try {
         // access authorize header to validate request
         const token = req.headers.authorization.split(' ')[1];
@@ -13,16 +13,21 @@ export default async function UserAuth(req,res,next) {
         // res.json(decodedToken)
         let { userID } = decodedToken
         let user = await UserModel.findById(userID).select('+authToken')
-        if (user.authToken === token) {
-            if(user.isAccountBlocked){
+        if (user) {
+            if (user.isAccountBlocked) {
                 return res.status(403).json({ success: false, message: 'User has been blocked' });
             }
-            req.user = decodedToken;
-            next()
-        } else{
+            if (user.userRole === 'user') {
+                req.user = decodedToken;
+                next();
+            } else if (user.userRole === 'serviceProvider') {
+                req.sp = decodedToken;
+                next();
+            }
+        } else {
             throw new Error("Invalid user or token");
         }
     } catch (error) {
-        res.status(401).json({ error : "Authentication Failed!"})
+        res.status(401).json({ error: "Authentication Failed!" })
     }
 }

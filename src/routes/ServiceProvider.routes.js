@@ -5,30 +5,31 @@ import * as ServiceProviderController from '../controllers/ServiceProviderContro
 import * as ServiceRequestController from '../controllers/ServiceRequestController.js'
 import { uploadServiceProviderAadharCard, uploadServiceProviderImage, uploadServiceProviderWorkImage } from '../services/aws.service.js';
 import SPAuth from '../middleware/ServiceProvide.Auth.js';
+import UserAuth from '../middleware/User.Auth.js';
 
 // POST ROUTES
 router.route('/verifyForExistingServiceProvide').post(ServiceProviderController.verifyForExistingServiceProvide);
 router.route('/verifyServiceProviderOtp').post(ServiceProviderController.verifyServiceProviderOtp);
-router.route('/acceptServiceRequest').post(SPAuth, ServiceRequestController.acceptServiceRequest);
-router.route('/addServiceProviderSkills').post(SPAuth, ServiceProviderController.addServiceProviderSkills);
+router.route('/acceptServiceRequest').post(UserAuth, ServiceRequestController.acceptServiceRequest);
+router.route('/addServiceProviderSkills').post(UserAuth, ServiceProviderController.addServiceProviderSkills);
 
 // GET ROUTES
-router.route('/getServiceProvider').get(SPAuth, ServiceProviderController.getServiceProvider);
-router.route('/getServicesRequestNearSPLocation').get(SPAuth, ServiceProviderController.getServicesRequestNearSPLocation);
-router.route('/getServiceProviderAllOrders').get(SPAuth, ServiceProviderController.getServiceProviderAllOrders);
+router.route('/getServiceProvider').get(UserAuth, ServiceProviderController.getServiceProvider);
+router.route('/getServicesRequestNearSPLocation').get(UserAuth, ServiceProviderController.getServicesRequestNearSPLocation);
+router.route('/getServiceProviderAllOrders').get(UserAuth, ServiceProviderController.getServiceProviderAllOrders);
 
 // PUT ROUTES
-router.route('/completeServiceProviderRegistrationDetails').put(SPAuth, uploadServiceProviderImage.single('profile'), ServiceProviderController.completeServiceProviderRegistrationDetails);
-router.route('/completeServiceProviderDetails').put(SPAuth, ServiceProviderController.completeServiceProviderDetails);
-router.route('/uploadServiceProviderProfile').put(SPAuth, uploadServiceProviderImage.single('profile'), ServiceProviderController.uploadUserProfile);
-router.route('/uploadWork').put(SPAuth, uploadServiceProviderWorkImage.array('gallery',10), ServiceProviderController.uploadWork);
-router.route('/uploadServiceProviderDocuments').put(SPAuth, uploadServiceProviderAadharCard.single('aadharCard'), ServiceProviderController.uploadServiceProviderDocuments);
-router.route('/updateSPLocation').put(SPAuth, ServiceProviderController.updateSPLocation);
-router.route('/updateServiceProviderSkills').put(SPAuth, ServiceProviderController.updateServiceProviderSkills);
-router.route('/changeWorkStatus').put(SPAuth, ServiceProviderController.changeWorkStatus);
+router.route('/completeServiceProviderRegistrationDetails').put(UserAuth, uploadServiceProviderImage.single('profile'), ServiceProviderController.completeServiceProviderRegistrationDetails);
+router.route('/completeServiceProviderDetails').put(UserAuth, ServiceProviderController.completeServiceProviderDetails);
+router.route('/uploadServiceProviderProfile').put(UserAuth, uploadServiceProviderImage.single('profile'), ServiceProviderController.uploadUserProfile);
+router.route('/uploadWork').put(UserAuth, uploadServiceProviderWorkImage.array('gallery',10), ServiceProviderController.uploadWork);
+router.route('/uploadServiceProviderDocuments').put(UserAuth, uploadServiceProviderAadharCard.single('aadharCard'), ServiceProviderController.uploadServiceProviderDocuments);
+router.route('/updateSPLocation').put(UserAuth, ServiceProviderController.updateSPLocation);
+router.route('/updateServiceProviderSkills').put(UserAuth, ServiceProviderController.updateServiceProviderSkills);
+router.route('/changeWorkStatus').put(UserAuth, ServiceProviderController.changeWorkStatus);
 
 // DELETE ROUTES
-router.route('/removeServiceProviderSubcategory').delete(SPAuth, ServiceProviderController.removeServiceProviderSubcategory);
-router.route('/deleteServiceProviderAccount').delete(SPAuth, ServiceProviderController.deleteServiceProviderAccount);
+router.route('/removeServiceProviderSubcategory').delete(UserAuth, ServiceProviderController.removeServiceProviderSubcategory);
+router.route('/deleteServiceProviderAccount').delete(UserAuth, ServiceProviderController.deleteServiceProviderAccount);
 
 export default router;

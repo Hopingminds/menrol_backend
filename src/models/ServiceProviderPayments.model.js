@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 export const ServiceProviderPaymentsSchema = new mongoose.Schema({
     serviceProviderId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'ServiceProvider',
+        ref: 'User',
         required: true,
     },
     serviceOrderId: {
@@ -55,7 +55,7 @@ ServiceProviderPaymentsSchema.pre("save", async function (next) {
         .model("ServiceOrder")
         .exists({ _id: this.serviceOrderId });
     const serviceProviderExists = await mongoose
-        .model("ServiceProvider")
+        .model("User")
         .exists({ _id: this.serviceProviderId });
 
     if (!serviceOrderExists || !serviceProviderExists) {
@@ -109,7 +109,7 @@ async function updateServiceProviderStats(serviceProviderId) {
         ]);
 
         const { totalEarnings = 0, totalOrders = 0 } = stats[0] || {};
-        await mongoose.model('ServiceProvider').updateOne(
+        await mongoose.model('User').updateOne(
             { _id: serviceProviderId },
             { totalEarnings, totalOrders }
         );
