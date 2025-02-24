@@ -54,7 +54,6 @@ export const ServicesSchema = new mongoose.Schema({
         },
         appImage: {
             type: String,
-            required: [true, "App Image is required with specific dimensions."],
             default: null,
         }
     }]
