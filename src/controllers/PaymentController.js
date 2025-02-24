@@ -224,7 +224,7 @@ export async function CheckSubcriptionPaymentResponse(req, res) {
         providerSubscription.paymentStatus = 'paid';
         await providerSubscription.save();
         
-        const provider = await ServiceProviderInfoModel.findById({ user: providerSubscription.provider });
+        const provider = await ServiceProviderInfoModel.findOne({ user: providerSubscription.provider });
         if (!provider) {
             return res.status(404).json({ success: false, message: 'Provider not found for the Subscription order' });
         }
