@@ -124,7 +124,7 @@ export async function verifyServiceProviderOtp(req, res) {
             { 
                 userID: serviceProvider._id,
                 phone: serviceProvider.phone,
-                role: serviceProvider.userRole,
+                role: "serviceProvider",
             }, 
             process.env.JWT_SECRET, 
             { expiresIn: '7d' }

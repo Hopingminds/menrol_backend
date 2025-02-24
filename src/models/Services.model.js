@@ -1,24 +1,28 @@
 import mongoose from "mongoose";
 
 export const ServicesSchema = new mongoose.Schema({
-    category:{
+    category: {
         type: String,
         required: true
     },
-    categoryImage:{
+    categoryImage: {
         type: String,
         default: null,
     },
-    categoryDescription:{
+    categoryAppImage: {
         type: String,
         default: null,
     },
-    subcategory:[{
-        title:{
+    categoryDescription: {
+        type: String,
+        default: null,
+    },
+    subcategory: [{
+        title: {
             type: String,
             required: true
         },
-        description:{
+        description: {
             type: String,
             default: null,
         },
@@ -32,23 +36,27 @@ export const ServicesSchema = new mongoose.Schema({
                 to: { type: Number },
             }
         ],
-        dailyWageWorker:{
+        dailyWageWorker: {
             type: Number,
-            default:0
+            default: 0
         },
-        hourlyWorker:{
+        hourlyWorker: {
             type: Number,
-            default:0
+            default: 0
         },
-        contractWorker:{
+        contractWorker: {
             type: Number,
-            default:0
+            default: 0
         },
-        image:{
+        image: {
             type: String,
             required: [true, "Image is required with specific dimensions."]
+        },
+        appImage: {
+            type: String,
+            required: [true, "App Image is required with specific dimensions."]
         }
     }]
-},{ timestamps: true });
+}, { timestamps: true });
 
 export default mongoose.model.Services || mongoose.model('Services', ServicesSchema);
