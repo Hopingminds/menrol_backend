@@ -11,16 +11,16 @@ export default async function UserAuth(req, res, next) {
         const decodedToken = await jwt.verify(token, process.env.JWT_SECRET);
 
         // res.json(decodedToken)
-        let { userID } = decodedToken
+        let { userID, role } = decodedToken
         let user = await UserModel.findById(userID).select('+authToken')
         if (user) {
             if (user.isAccountBlocked) {
                 return res.status(403).json({ success: false, message: 'User has been blocked' });
             }
-            if (user.userRole === 'user') {
+            if (role === 'user') {
                 req.user = decodedToken;
                 next();
-            } else if (user.userRole === 'serviceProvider') {
+            } else if (role === 'serviceProvider') {
                 req.sp = decodedToken;
                 next();
             }
