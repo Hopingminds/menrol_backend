@@ -5,10 +5,10 @@ import UserModel from "../models/User.model.js";
 
 export async function verifyUserOtp(req, res) {
     try {
-        const { phone, otp, role } = req.body;
+        const { phone, otp } = req.body;
 
-        if (!phone || !otp || !role) {
-            return res.status(400).json({ success: false, message: 'Phone, OTP and role are required' });
+        if (!phone || !otp) {
+            return res.status(400).json({ success: false, message: 'Phone and OTP are required' });
         }
 
         const otpuser = await OtpModel.findOne({ phone });
