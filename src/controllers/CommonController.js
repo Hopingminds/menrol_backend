@@ -1,4 +1,5 @@
 import ContactModel from "../models/Contact.model.js";
+import { deleteFileFromAWS } from "../services/aws.service.js";
 import { sendEmail } from "../services/email.service.js";
 import { sendOTP } from "../services/otp.service.js";
 import 'dotenv/config';
@@ -56,5 +57,43 @@ export async function sendEmailQuery(req, res) {
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function uploadedFileResponse(req, res) {
+    try {
+        const file = req.file;
+        if (!file) {
+            return res.status(400).send({ success: false, message: 'No file uploaded' });
+        }
+
+        const fileDetails = {
+            originalName: file.originalname,
+            path: file.location, // If using S3, otherwise use file.path
+            mimetype: file.mimetype,
+            size: file.size,
+        };
+
+        res.status(200).send({ success: true, file: fileDetails });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal server error: " + error.message });
+    }
+}
+
+export async function deleteAFileAWS(req, res) {
+    try {
+        const { fileUrl } = req.body;
+        if(!fileUrl){
+            return res.status(400).json({ success: false, message: 'Missing required field' });
+        }
+
+        const deletionSuccess = await deleteFileFromAWS(fileUrl);
+        if (!deletionSuccess) {
+            return res.status(400).json({ success: false, message:`Failed to delete image: ${fileUrl}`});
+        }
+
+        return res.status(200).json({ success: true, message: 'File deleted successfully.' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal server error: " + error.message });
     }
 }

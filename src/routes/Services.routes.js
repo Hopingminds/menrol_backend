@@ -2,11 +2,14 @@ import { Router } from 'express'
 const router = Router()
 
 import * as ServicesController from '../controllers/ServicesController.js'
+import * as CommonController from '../controllers/CommonController.js'
 import { uploadCategoryImage, uploadSubCategoryImage } from '../services/aws.service.js';
 import AdminAuth from '../middleware/Admin.Auth.js';
 
 // POST ROUTES
-router.route('/createService').post(AdminAuth, uploadSubCategoryImage.array('subcategoryImages', 10), ServicesController.createService);
+router.route('/createService').post(AdminAuth, ServicesController.createService);
+router.route('/uploadCategoryImage').post(AdminAuth, uploadCategoryImage.single('categoryImage'), CommonController.uploadedFileResponse);
+router.route('/uploadSubCategoryImage').post(AdminAuth, uploadSubCategoryImage.single('subcategoryImages'), CommonController.uploadedFileResponse);
 
 // GET ROUTES
 router.route('/getServices').get(ServicesController.getServices);

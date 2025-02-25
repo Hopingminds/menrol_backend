@@ -10,22 +10,17 @@ import { deleteFileFromAWS } from "../services/aws.service.js";
  */
 export async function createService(req, res) {
     try {
-        const { category, categoryDescription, subcategory } = req.body;
+        const { category, categoryDescription, categoryImage, categoryAppImage, subcategories } = req.body;
 
-        // Parse subcategory data only if it's a string
-        const subcategories = typeof subcategory === 'string' ? JSON.parse(subcategory) : subcategory;
-
-        // Validate inputs
-        if (!category ||  !Array.isArray(subcategories) || subcategories.length === 0) {
+        if (!category || !categoryImage || !categoryAppImage || !Array.isArray(subcategories) || subcategories.length === 0) {
             return res.status(400).json({
                 success: false,
-                message: "Category and subcategory (as a non-empty array) are required."
+                message: "Category and subcategories (as a non-empty array) are required."
             });
         }
 
         // Check if the category already exists
         const existingService = await ServicesModel.findOne({ category });
-
         if (existingService) {
             return res.status(400).json({
                 success: false,
@@ -33,33 +28,29 @@ export async function createService(req, res) {
             });
         }
 
-        // Extract image URLs from the uploaded files
-        const subcategoryImageUrls = req.files ? req.files.map(file => file.location) : [];
-        
-        // Validate that images were uploaded
-        if (subcategoryImageUrls.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Both category image and at least one subcategory image are required."
-            });
-        }
-        
-        // Create a new service document
+        const formattedSubcategories = subcategories.map((subcategory) => {
+            if (!subcategory.title || !subcategory.image || !subcategory.appImage || !Array.isArray(subcategory.pricing)) {
+                throw new Error("Each subcategory must have a title, image, pricing and appImage.");
+            }
+            return {
+                title: subcategory.title,
+                description: subcategory.description || null,
+                pricing: Array.isArray(subcategory.pricing) ? subcategory.pricing : [],
+                image: subcategory.image,
+                appImage: subcategory.appImage
+            };
+        });
+
         const newService = new ServicesModel({
             category,
             categoryDescription,
-            subcategory: subcategories.map((subcategory, index) => ({
-                title: subcategory.title,
-                description: subcategory.description,
-                image: subcategoryImageUrls[index] || null, // Save the subcategory image URLs
-                pricing: subcategory.pricing
-            }))
+            categoryImage,
+            categoryAppImage,
+            subcategory: formattedSubcategories
         });
 
-        // Save to the database
         const savedService = await newService.save();
 
-        // Respond with the created service
         return res.status(201).json({ 
             success: true, 
             message: "Service created successfully.", 
@@ -194,53 +185,35 @@ export async function getAllServices(req, res) {
  */
 export async function addSubCategory(req, res) {
     try {
-        const { category, subcategory } = req.body;
+        const { serviceID, subcategory } = req.body;
+        const { title, description, pricing, image, appImage } = subcategory;
 
-        // Parse subcategory data only if it's a string
-        const subcategories = typeof subcategory === 'string' ? JSON.parse(subcategory) : subcategory;
-
-        // Validate inputs
-        if (!category ||  !Array.isArray(subcategories) || subcategories.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Category and subcategory (as a non-empty array) are required."
-            });
+        if (!serviceID) {
+            return res.status(400).json({ success: false, message: "Service ID is required" });
+        }
+        if (!title || !description || !pricing || !image || !appImage) {
+            return res.status(400).json({ success: false, message: "title, description, pricing, image, appImage are required for updating" });
         }
 
-        const service = await ServicesModel.findOne({ category: category });
+        const service = await ServicesModel.findById(serviceID);
         if (!service) {
-            return res.status(404).json({ success: false, message: `No service for ${category} found.` });
+            return res.status(404).json({ success: false, message: "Service not found" });
         }
 
-        // Extract uploaded files and associate them with subcategories
-        const subcategoryImageUrls = req.files ? req.files.map(file => file.location) : [];
+        const existingSubcategory = service.subcategory.find(subcat => subcat.title === title);
+        if (existingSubcategory) {
+            return res.status(404).json({ success: false, message: "Subcategory already exists." });
+        }
+
+        service.subcategory.push(subcategory);
         
-        if (subcategoryImageUrls.length < subcategories.length) {
-            return res.status(400).json({
-                success: false,
-                message: "Ensure that an image is provided for each subcategory."
-            });
-        }
-
-        // Map new subcategories with images
-        const newSubcategories = subcategories.map((subcat, index) => ({
-            title: subcat.title,
-            description: subcat.description,
-            image: subcategoryImageUrls[index] || null,
-            pricing: subcat.pricing,
-        }));
-
-        // Add new subcategories without filtering
-        service.subcategory.push(...newSubcategories);
-
-        // Save the updated service
-        const updatedService = await service.save();
+        await service.save();
 
         // Return the updated service
         return res.status(200).json({
             success: true,
-            message: `${newSubcategories.length} subcategories added successfully.`,
-            data: updatedService
+            message: `Subcategory added successfully.`,
+            data: service
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: '+ error.message });
@@ -257,7 +230,6 @@ export async function removeSubCategory(req, res) {
     try {
         const { category, subcategoryTitle } = req.body;
 
-        // Validate input
         if (!category || !subcategoryTitle) {
             return res.status(400).json({
                 success: false,
@@ -265,7 +237,6 @@ export async function removeSubCategory(req, res) {
             });
         }
 
-        // Find the service by category
         const service = await ServicesModel.findOne({ category });
         if (!service) {
             return res.status(404).json({
@@ -274,7 +245,6 @@ export async function removeSubCategory(req, res) {
             });
         }
 
-        // Check if the subcategory exists
         const subcategoryIndex = service.subcategory.findIndex(
             (subcat) => subcat.title === subcategoryTitle
         );
@@ -286,29 +256,26 @@ export async function removeSubCategory(req, res) {
             });
         }
 
-        // Delete the associated image from AWS S3
-        const imageToDelete = service.subcategory[subcategoryIndex].image;
-        if (imageToDelete) {
-            const deletionSuccess = await deleteFileFromAWS(imageToDelete);
-            if (!deletionSuccess) {
-                console.warn(`Failed to delete image: ${imageToDelete}`);
-            }
-        }
+        const { image, appImage } = service.subcategory[subcategoryIndex];
+        const imagesToDelete = [image, appImage].filter(Boolean);
 
-        // Remove the subcategory
+        await Promise.all(imagesToDelete.map(async (imageUrl) => {
+            try {
+                await deleteFileFromAWS(imageUrl);
+            } catch (error) {
+                console.warn(`Failed to delete image: ${imageUrl}. Error: ${error.message}`);
+            }
+        }));
+
         service.subcategory.splice(subcategoryIndex, 1);
 
-
-        // Save the updated service
         const updatedService = await service.save();
 
-        // Return the updated service
         return res.status(200).json({
             success: true,
             message: `Subcategory '${subcategoryTitle}' removed successfully.`,
             data: updatedService
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -325,6 +292,15 @@ export async function removeSubCategory(req, res) {
 export async function deleteService(req, res) {
     try {
         const { category } = req.body;
+
+        if (!category) {
+            return res.status(400).json({
+                success: false,
+                message: "Category is required."
+            });
+        }
+
+        // Find the service by category
         const service = await ServicesModel.findOne({ category });
         if (!service) {
             return res.status(404).json({
@@ -333,18 +309,29 @@ export async function deleteService(req, res) {
             });
         }
 
-        // Delete subcategory images from AWS S3
+        // Collect all images (category and subcategories) to delete
+        const imagesToDelete = [];
+
+        // Delete category images if they exist
+        if (service.categoryImage) imagesToDelete.push(service.categoryImage);
+        if (service.categoryAppImage) imagesToDelete.push(service.categoryAppImage);
+
+        // Delete subcategory images if they exist
         if (service.subcategory && service.subcategory.length > 0) {
             for (const subcat of service.subcategory) {
-                if (subcat.image) {
-                    
-                    const subcatImageDeletionSuccess = await deleteFileFromAWS(subcat.image);
-                    if (!subcatImageDeletionSuccess) {
-                        console.warn(`Failed to delete subcategory image: ${subcat.image}`);
-                    }
-                }
+                if (subcat.image) imagesToDelete.push(subcat.image);
+                if (subcat.appImage) imagesToDelete.push(subcat.appImage);
             }
         }
+
+        // Delete images from AWS S3
+        await Promise.all(imagesToDelete.map(async (imageUrl) => {
+            try {
+                await deleteFileFromAWS(imageUrl);
+            } catch (error) {
+                console.warn(`Failed to delete image: ${imageUrl}. Error: ${error.message}`);
+            }
+        }));
 
         // Delete the service document from the database
         await ServicesModel.deleteOne({ category });
@@ -397,14 +384,14 @@ export async function addCategoryImage(req, res) {
 
 export async function editServiceData(req, res) {
     try {
-        const { serviceID, category, categoryDescription, subcategory } = req.body;
+        const { serviceID, category, categoryDescription, categoryImage, categoryAppImage, subcategory } = req.body;
 
-        if(!serviceID){
-            return res.status(404).json({ success: false, message: "serviceID is required" });
+        if (!serviceID) {
+            return res.status(400).json({ success: false, message: "serviceID is required" });
         }
-        
-        if(!category && !subcategory){
-            return res.status(404).json({ success: false, message: "category, subcategory is required" });
+
+        if (!category || !subcategory || !categoryImage || !categoryAppImage) {
+            return res.status(400).json({ success: false, message: "category, subcategory, categoryImage, and categoryAppImage are required" });
         }
 
         // Check if the service exists
@@ -413,22 +400,40 @@ export async function editServiceData(req, res) {
             return res.status(404).json({ success: false, message: "Service not found" });
         }
 
-        // Update category if provided
-        if (category) {
-            service.category = category;
-            service.categoryDescription = categoryDescription;
+        // Handle category image updates with AWS deletion
+        if (categoryImage && service.categoryImage && categoryImage !== service.categoryImage) {
+            await deleteFileFromAWS(service.categoryImage);
+        }
+        if (categoryAppImage && service.categoryAppImage && categoryAppImage !== service.categoryAppImage) {
+            await deleteFileFromAWS(service.categoryAppImage);
         }
 
-        // Update subcategory fields specifically if provided
-        if (subcategory) {
-            subcategory.forEach((sub, index) => {
-                if (service.subcategory[index]) {
-                    if (sub.title) service.subcategory[index].title = sub.title;
-                    if (sub.description) service.subcategory[index].description = sub.description;
-                    if (sub.pricing) service.subcategory[index].pricing = sub.pricing;
-                } else {
-                    service.subcategory.push(sub);
+        // Update category fields
+        service.category = category;
+        service.categoryDescription = categoryDescription;
+        service.categoryImage = categoryImage;
+        service.categoryAppImage = categoryAppImage;
+
+        // Update subcategory fields
+        if (Array.isArray(subcategory)) {
+            service.subcategory = subcategory.map((sub, index) => {
+                const existingSub = service.subcategory[index] || {};
+
+                // Handle subcategory image updates with AWS deletion
+                if (sub.image && existingSub.image && sub.image !== existingSub.image) {
+                    deleteFileFromAWS(existingSub.image);
                 }
+                if (sub.appImage && existingSub.appImage && sub.appImage !== existingSub.appImage) {
+                    deleteFileFromAWS(existingSub.appImage);
+                }
+
+                return {
+                    title: sub.title || existingSub.title,
+                    description: sub.description || existingSub.description,
+                    pricing: sub.pricing || existingSub.pricing,
+                    image: sub.image || existingSub.image,
+                    appImage: sub.appImage || existingSub.appImage,
+                };
             });
         }
 
@@ -448,28 +453,37 @@ export async function editServiceData(req, res) {
 export async function editServiceSubCategory(req, res) {
     try {
         const { serviceID, subcategory } = req.body;
-        const { _id, title, description, pricing } = subcategory;
+        const { _id, title, description, pricing, image, appImage } = subcategory;
+
+        if (!serviceID) {
+            return res.status(400).json({ success: false, message: "Service ID is required" });
+        }
+        if (!_id) {
+            return res.status(400).json({ success: false, message: "Subcategory ID is required for updating" });
+        }
 
         const service = await ServicesModel.findById(serviceID);
         if (!service) {
             return res.status(404).json({ success: false, message: "Service not found" });
         }
 
-        if (!_id) {
-            return res.status(400).json({ success: false, message: "Subcategory ID is required for updating" });
-        }
-
-        // Find the existing subcategory by _id
-        const existingSubcategory = service.subcategory.id(_id);
-
+        const existingSubcategory = service.subcategory.find(subcat => subcat._id.toString() === _id);
         if (!existingSubcategory) {
             return res.status(404).json({ success: false, message: "Subcategory not found" });
         }
 
-        // Update the existing subcategory fields
+        if (image && existingSubcategory.image && image !== existingSubcategory.image) {
+            await deleteFileFromAWS(existingSubcategory.image);
+        }
+        if (appImage && existingSubcategory.appImage && appImage !== existingSubcategory.appImage) {
+            await deleteFileFromAWS(existingSubcategory.appImage);
+        }
+
         existingSubcategory.title = title || existingSubcategory.title;
         existingSubcategory.description = description || existingSubcategory.description;
         existingSubcategory.pricing = pricing || existingSubcategory.pricing;
+        existingSubcategory.image = image || existingSubcategory.image;
+        existingSubcategory.appImage = appImage || existingSubcategory.appImage;
 
         // Save the updated service document
         await service.save();
