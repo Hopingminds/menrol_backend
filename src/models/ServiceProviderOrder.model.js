@@ -52,6 +52,10 @@ const ServiceProviderOrderSchema = new mongoose.Schema({
                         workEnded: { type: Boolean, default: false },
                         endTime: { type: Date, default: null },
                     },
+                    paymentReceived: {
+                        type: Boolean,
+                        default: false,
+                    },
                 },
             ],
         },

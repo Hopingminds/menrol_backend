@@ -390,13 +390,25 @@ export async function getServiceProvider(req, res) {
     try {
         const { userID } = req.sp;
 
-        const serviceProvider = await UserModel.findById(userID).populate({
-            path: 'serviceProviderInfo',
-            populate: {
-                path: 'skills.category',
-                select: '-subcategory',
+        const serviceProvider = await UserModel.findById(userID).populate([
+            {
+                path: 'serviceProviderInfo',
+                populate: [
+                    {
+                        path: 'skills.category',
+                        select: '-subcategory',
+                    },
+                    {
+                        path: 'activeSubscription',
+                        select: 'subscription trxnId startDate endDate paymentStatus status',
+                        populate: { path: 'subscription' }
+                    },
+                    {
+                        path: 'providerSubscription'
+                    }
+                ]
             }
-        });
+        ]);        
 
         if (!serviceProvider) {
             return res.status(404).json({ success: false, message: "Service provider not found." });
@@ -1312,6 +1324,10 @@ export async function confirmEndWorkingOtp(req, res) {
             return res.status(404).json({ success: false, message: "Subcategory not found for service Provider order." });
         }
 
+        if(!serviceProviderOrdersubcategory.paymentReceived){
+            return res.status(400).json({ success: false, message: 'Collect Payment First.' });
+        }
+
         serviceProviderOrdersubcategory.serviceStatus = 'completed';
         serviceProviderOrdersubcategory.otpDetails.endOtp = endOtp;
         serviceProviderOrdersubcategory.otpDetails.endOtpConfirmed = true;
@@ -1367,7 +1383,6 @@ export async function paymentCollectForOrder(req, res) {
         if(serviceProviderSubcategory.paymentReceived){
             return res.status(400).json({ success: false, message: 'Payment already received.' });
         }
-        serviceProviderSubcategory.paymentReceived = paymentReceived;
 
         const serviceProvidersCompletedOrder = subcategory.serviceProviders.filter(s => s.status === 'completed')
         if(serviceProvidersCompletedOrder.length === subcategory.workersRequirment){
@@ -1386,6 +1401,8 @@ export async function paymentCollectForOrder(req, res) {
             return res.status(404).json({ success: false, message: "Subcategory not found for service Provider order." });
         }
 
+        serviceProviderSubcategory.paymentReceived = paymentReceived;
+        serviceProviderOrdersubcategory.paymentReceived = paymentReceived;
         serviceProviderOrdersubcategory.serviceStatus = 'completed';
 
         const serviceProviderPayment = new ServiceProviderPaymentsModel({
