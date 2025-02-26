@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import ServicesModel from "./Services.model.js";
 
 // Function to generate a random 6-digit OTP
 const generateOtp = () => {
@@ -108,9 +109,9 @@ const ServiceOrderSchema = new mongoose.Schema({
         required: true,
     },
     payment: {
-        totalamount: { type: Number, default: 0 }, // The total amount to be paid.
-        paidAmount: { type: Number, default: 0 }, // Amount paid so far.
-        dueAmount: { type: Number, default: 0 },  // Amount still to be paid.
+        totalamount: { type: Number, default: 0 },
+        paidAmount: { type: Number, default: 0 },
+        dueAmount: { type: Number, default: 0 },
         paymentType: {
             type: String,
             enum: ['upfront', 'post-service'],
@@ -122,7 +123,7 @@ const ServiceOrderSchema = new mongoose.Schema({
             default: 'pending'
         },
         paymentmethod: { type: String, enum: ['app', 'cash'], default: 'app' },
-        paymentDate: { type: Date, default: null }, // The date when the payment was made.
+        paymentDate: { type: Date, default: null },
     },
 }, { timestamps: true });
 
@@ -152,6 +153,26 @@ ServiceOrderSchema.pre('save', async function (next) {
     }
 
     next();
+});
+
+ServiceOrderSchema.post('save', async function (doc, next) {
+    try {
+        const subcategoryIds = new Set();
+        doc.serviceRequest.forEach(request => {
+            request.subcategory.forEach(sub => {
+                subcategoryIds.add(sub.subcategoryId.toString());
+            });
+        });
+
+        await ServicesModel.updateMany(
+            { "subcategory._id": { $in: Array.from(subcategoryIds) } },
+            { $inc: { "subcategory.$.noOfBookings": 1 } }
+        );
+
+        next();
+    } catch (error) {
+        next(error);
+    }
 });
 
 export default mongoose.model.ServiceOrder || mongoose.model('ServiceOrder', ServiceOrderSchema);

@@ -48,6 +48,10 @@ export const ServicesSchema = new mongoose.Schema({
             type: Number,
             default: 0
         },
+        noOfBookings: {
+            type: Number,
+            default: 0
+        },
         image: {
             type: String,
             required: [true, "Image is required with specific dimensions."]
@@ -55,6 +59,10 @@ export const ServicesSchema = new mongoose.Schema({
         appImage: {
             type: String,
             default: null,
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now
         }
     }]
 }, { timestamps: true });

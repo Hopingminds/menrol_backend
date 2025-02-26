@@ -433,6 +433,7 @@ export async function editServiceData(req, res) {
                     pricing: sub.pricing || existingSub.pricing,
                     image: sub.image || existingSub.image,
                     appImage: sub.appImage || existingSub.appImage,
+                    noOfBookings: sub.noOfBookings || existingSub.noOfBookings,
                 };
             });
         }
@@ -653,6 +654,68 @@ export async function searchSubCategoryInAllCategories(req, res) {
 
         // Return response
         return res.status(200).json({ success: true, data: filteredCategories });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+
+export async function getMostBookedServices(req, res) {
+    try {
+        // Aggregating top 10 most booked subcategories
+        const topServices = await ServicesModel.aggregate([
+            { $unwind: "$subcategory" }, // Unwind the subcategory array
+            { 
+                $addFields: { 
+                    "subcategory.totalBookings": { 
+                        $add: [
+                            "$subcategory.noOfBookings",
+                            "$subcategory.dailyWageWorker",
+                            "$subcategory.hourlyWorker",
+                            "$subcategory.contractWorker"
+                        ]
+                    }
+                } 
+            },
+            { $sort: { "subcategory.totalBookings": -1 } }, // Sort in descending order
+            { $limit: 10 }, // Limit to top 10 results
+            { 
+                $project: {
+                    _id: 0,
+                    category: 1,
+                    categoryImage: 1,
+                    categoryDescription: 1,
+                    "subcategory": 1 // Includes all fields in subcategory
+                } 
+            }
+        ]);
+
+        return res.status(200).json({ success: true, data: topServices });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+    }
+}
+
+export async function getNewlyAddedServices(req, res) {
+    try {
+        // Aggregating the 10 latest subcategories based on created timestamp
+        const latestSubcategories = await ServicesModel.aggregate([
+            { $unwind: "$subcategory" }, // Unwind subcategory array
+            { $sort: { "subcategory.createdAt": -1 } }, // Sort by newest first
+            { $limit: 10 }, // Get top 10 latest subcategories
+            { 
+                $project: {
+                    _id: 0,
+                    category: 1,
+                    categoryImage: 1,
+                    categoryAppImage: 1,
+                    categoryDescription: 1,
+                    "subcategory": 1 // Include all fields in subcategory
+                } 
+            }
+        ]);
+
+        return res.status(200).json({ success: true, data: latestSubcategories });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
     }

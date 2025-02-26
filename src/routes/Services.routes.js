@@ -19,6 +19,8 @@ router.route('/getSubcategory').get(ServicesController.getSubcategory);
 router.route('/searchCategory').get(ServicesController.searchCategory);
 router.route('/searchSubCategory').get(ServicesController.searchSubCategoryInCategory);
 router.route('/searchSubCategoryInAllCategories').get(ServicesController.searchSubCategoryInAllCategories);
+router.route('/getMostBookedServices').get(ServicesController.getMostBookedServices);
+router.route('/getNewlyAddedServices').get(ServicesController.getNewlyAddedServices);
 
 // PUT ROUTES
 router.route('/editServiceData').put(AdminAuth, ServicesController.editServiceData);
