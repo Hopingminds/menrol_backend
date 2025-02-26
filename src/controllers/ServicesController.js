@@ -659,12 +659,10 @@ export async function searchSubCategoryInAllCategories(req, res) {
     }
 }
 
-
 export async function getMostBookedServices(req, res) {
     try {
-        // Aggregating top 10 most booked subcategories
         const topServices = await ServicesModel.aggregate([
-            { $unwind: "$subcategory" }, // Unwind the subcategory array
+            { $unwind: "$subcategory" },
             { 
                 $addFields: { 
                     "subcategory.totalBookings": { 
@@ -677,15 +675,15 @@ export async function getMostBookedServices(req, res) {
                     }
                 } 
             },
-            { $sort: { "subcategory.totalBookings": -1 } }, // Sort in descending order
-            { $limit: 10 }, // Limit to top 10 results
+            { $sort: { "subcategory.totalBookings": -1 } },
+            { $limit: 10 },
             { 
                 $project: {
                     _id: 0,
                     category: 1,
                     categoryImage: 1,
                     categoryDescription: 1,
-                    "subcategory": 1 // Includes all fields in subcategory
+                    "subcategory": 1
                 } 
             }
         ]);
@@ -698,11 +696,15 @@ export async function getMostBookedServices(req, res) {
 
 export async function getNewlyAddedServices(req, res) {
     try {
-        // Aggregating the 10 latest subcategories based on created timestamp
         const latestSubcategories = await ServicesModel.aggregate([
-            { $unwind: "$subcategory" }, // Unwind subcategory array
-            { $sort: { "subcategory.createdAt": -1 } }, // Sort by newest first
-            { $limit: 10 }, // Get top 10 latest subcategories
+            { $unwind: "$subcategory" },
+            { 
+                $sort: { 
+                    "subcategory.createdAt": -1,
+                    "subcategory.totalBookings": -1
+                } 
+            },            
+            { $limit: 10 },
             { 
                 $project: {
                     _id: 0,
@@ -710,7 +712,7 @@ export async function getNewlyAddedServices(req, res) {
                     categoryImage: 1,
                     categoryAppImage: 1,
                     categoryDescription: 1,
-                    "subcategory": 1 // Include all fields in subcategory
+                    "subcategory": 1
                 } 
             }
         ]);
