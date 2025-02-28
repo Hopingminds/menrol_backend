@@ -96,13 +96,14 @@ export async function uploadUserProfile(req, res) {
 
 export async function getUser(req, res) {
     try {
-        const { userID } = req.user;
-        const user = await UserModel.findById(userID);
+        const { userID, role } = req.user;
+        
+        let user = await UserModel.findById(userID);
         if(!user){
             return res.status(404).json({ success: false, message: "User not found."});
         }
 
-        if (user.userRole === "serviceProvider") {
+        if (role === "serviceProvider") {
             user = await user.populate('serviceProviderInfo');
         }
 
