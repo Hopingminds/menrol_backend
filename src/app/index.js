@@ -37,7 +37,7 @@ dotenv.config();
 const app = express();
 
 // Limiting middleware for all requests
-// app.use(limiter);
+app.use(limiter);
 
 // HTTP request logger middleware
 if (process.env.APP_NODE_ENV !== 'production') {
