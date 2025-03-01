@@ -121,7 +121,7 @@ const rateLimitHandler = (bufferedLogger, message) => (req, res, _next, options)
 // 🔹 Global API rate limiter with sampling for high-traffic scenarios
 const limiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 1000,
+    max: 100,
     message: { message: 'Too many requests from this IP, please try again after 60 seconds' },
     handler: rateLimitHandler(apiLimiterLogger, 'Too many requests from this IP, please try again after 60 seconds'),
     standardHeaders: true,
