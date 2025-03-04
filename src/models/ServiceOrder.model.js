@@ -27,7 +27,7 @@ const ServiceOrderSchema = new mongoose.Schema({
                     },
                     scheduledTiming: {
                         startTime: { type: Date, required: true },
-                        endTime: { type: Date, required: true },
+                        endTime: { type: Date, required: true, default: Date.now() },
                     },
                     title: { type: String, required: true },
                     requestType: { type: String, required: true },
