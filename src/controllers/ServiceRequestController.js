@@ -4,6 +4,7 @@ import ServiceRequestModel from "../models/ServiceRequest.model.js";
 import ServiceProviderModel from "../models/ServiceProvider.model.js";
 import { getOrderValue } from "../services/order.service.js";
 import ServiceOrderModel from "../models/ServiceOrder.model.js";
+import { deleteFileFromAWS } from "../services/aws.service.js";
 
 export async function createServiceRequest(req, res) { //NOT IN USE UPDATE IT BEFORE USING
     try {
@@ -121,22 +122,17 @@ export async function addServiceRequest(req, res) {
 
         // Check if a service request already exists for the user
         let existingRequest = await ServiceRequestModel.findOne({ user: userID });
-        
-        const instImages = req.files?.map(file => file.location) || [];
-        
-        const parsedsubcategory = JSON.parse(subcategory);
-        subcategory = parsedsubcategory;
-        
-        
+
         const subcategoryEntry = {
             subcategoryId: subcategory.subcategoryId,
             title: subcategory.title,
             requestType: subcategory.requestType || "daily",
-            selectedAmount: subcategory.selectedAmount,
+            selectedAmount: subcategory.selectedAmount || 0,
             workersRequirment: subcategory.workersRequirment || 1,
             status: "pending",
             instructions: subcategory.instructions || null,
-            instructionsImages: instImages || [],
+            instructionsImages: subcategory.instructionsImages || [],
+            instructionAudio: subcategory.instructionAudio || null,
             scheduledTiming: {
                 startTime: new Date(subcategory.scheduledTiming.startTime),
                 endTime: subcategory.scheduledTiming.endTime ? new Date(subcategory.scheduledTiming.endTime) : null,
@@ -152,7 +148,7 @@ export async function addServiceRequest(req, res) {
 
             if (serviceEntry) {
                 // Check if the subcategoryId already exists in the service's subcategories
-                const subcategoryExists = serviceEntry.subcategory.some(
+                const subcategoryExists = serviceEntry.subcategory.find(
                     (subcat) => subcat.subcategoryId.toString() === subcategory.subcategoryId.toString()
                 );
 
@@ -302,9 +298,7 @@ export async function getUserServiceRequests(req, res) {
                     
                     return updatedSub;
                 });
-                
-                // console.log(updatedSubcategories);
-                
+
                 // Return the request with updated subcategory
                 return {
                     ...request.toObject(), // Convert to plain object
@@ -315,8 +309,6 @@ export async function getUserServiceRequests(req, res) {
             return request.toObject(); // Return the request as is, converted to plain object
         });
 
-        console.log(updatedRequests[0].subcategory);
-        
         const responseObject = serviceRequests.toObject();
         delete responseObject.requestedServices;
         responseObject.requestedServices = updatedRequests;
@@ -375,87 +367,67 @@ export async function removeServiceRequest(req, res) {
 export async function updateServiceRequest(req, res) {
     try {
         const { userID } = req.user;
-        const { service, subcategoryId, updatedFields } = req.body;
+        const { serviceRequestId, service, subcategory } = req.body;
 
         // Validate required fields
-        if (!service || !subcategoryId || !updatedFields) {
+        if (!serviceRequestId || !service || !subcategory) {
             return res.status(400).json({ success: false, message: "All required fields must be provided." });
         }
 
-        // Check if the service request exists for the user
-        let existingRequest = await ServiceRequestModel.findOne({ user: userID });
+        // Find the service request by ID and user
+        let serviceRequest = await ServiceRequestModel.findOne({ _id: serviceRequestId, user: userID });
 
-        if (!existingRequest) {
-            return res.status(404).json({
-                success: false,
-                message: "Service request not found.",
-            });
+        if (!serviceRequest) {
+            return res.status(404).json({ success: false, message: "Service request not found." });
         }
 
-        // Locate the service in requestedServices
-        const serviceEntry = existingRequest.requestedServices.find(
+        // Find the service entry in the requested services
+        const serviceEntry = serviceRequest.requestedServices.find(
             (reqService) => reqService.service.toString() === service.toString()
         );
 
         if (!serviceEntry) {
-            return res.status(404).json({
-                success: false,
-                message: "Service not found in the service request.",
-            });
+            return res.status(404).json({ success: false, message: "Service not found in request." });
         }
 
-        // Locate the subcategory in the service
+        // Find the subcategory entry in the service
         const subcategoryEntry = serviceEntry.subcategory.find(
-            (subcat) => subcat.subcategoryId.toString() === subcategoryId.toString()
+            (subcat) => subcat.subcategoryId.toString() === subcategory.subcategoryId.toString()
         );
 
         if (!subcategoryEntry) {
-            return res.status(404).json({
-                success: false,
-                message: "Subcategory not found in the service request.",
-            });
+            return res.status(404).json({ success: false, message: "Subcategory not found in request." });
         }
 
-        const instImages = req.files?.map(file => file.location) || [];
-        // Allowed fields to update
-        const allowedFields = [
-            "requestType",
-            "selectedAmount",
-            "workersRequirment",
-            "instructions",
-            "instructionsImages",
-            "scheduledTiming",
-        ];
-
-        // Update the fields in the subcategory
-        for (const key in updatedFields) {
-            if (allowedFields.includes(key)) {
-                if (key === "scheduledTiming" && updatedFields[key]) {
-                    subcategoryEntry[key].startTime = updatedFields[key].startTime
-                        ? new Date(updatedFields[key].startTime)
-                        : subcategoryEntry[key].startTime;
-                    subcategoryEntry[key].endTime = updatedFields[key].endTime
-                        ? new Date(updatedFields[key].endTime)
-                        : subcategoryEntry[key].endTime;
-                } else if (key === "instructionsImages") {
-                    // Replace with updated images and append new ones
-                    subcategoryEntry[key] = [
-                        ...updatedFields[key],
-                        ...instImages,
-                    ];
-                } else {
-                    subcategoryEntry[key] = updatedFields[key];
-                }
-            }
+        // Delete previous files from AWS if new ones are provided
+        if (subcategory.instructionsImages && subcategoryEntry.instructionsImages.length > 0) {
+            await Promise.all(subcategoryEntry.instructionsImages.map((image) => deleteFileFromAWS(image)));
+            subcategoryEntry.instructionsImages = subcategory.instructionsImages;
         }
 
-        // Save the updated service request
-        await existingRequest.save();
+        if (subcategory.instructionAudio && subcategoryEntry.instructionAudio) {
+            await deleteFileFromAWS(subcategoryEntry.instructionAudio);
+            subcategoryEntry.instructionAudio = subcategory.instructionAudio;
+        }
+
+        // Update subcategory details
+        subcategoryEntry.title = subcategory.title || subcategoryEntry.title;
+        subcategoryEntry.requestType = subcategory.requestType || subcategoryEntry.requestType;
+        subcategoryEntry.selectedAmount = subcategory.selectedAmount || subcategoryEntry.selectedAmount;
+        subcategoryEntry.workersRequirment = subcategory.workersRequirment || subcategoryEntry.workersRequirment;
+        subcategoryEntry.status = subcategory.status || subcategoryEntry.status;
+        subcategoryEntry.instructions = subcategory.instructions || subcategoryEntry.instructions;
+        subcategoryEntry.scheduledTiming = {
+            startTime: subcategory.scheduledTiming?.startTime ? new Date(subcategory.scheduledTiming.startTime) : subcategoryEntry.scheduledTiming.startTime,
+            endTime: subcategory.scheduledTiming?.endTime ? new Date(subcategory.scheduledTiming.endTime) : subcategoryEntry.scheduledTiming.endTime,
+        };
+
+        await serviceRequest.save();
 
         return res.status(200).json({
             success: true,
             message: "Service request updated successfully.",
-            data: existingRequest,
+            data: serviceRequest,
         });
     } catch (error) {
         console.error(error);

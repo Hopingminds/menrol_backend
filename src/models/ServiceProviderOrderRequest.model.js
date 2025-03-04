@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const ServiceProviderOrderSchema = new mongoose.Schema({
+const ServiceProviderOrderRequestSchema = new mongoose.Schema({
     ServiceProvider: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -22,40 +22,23 @@ const ServiceProviderOrderSchema = new mongoose.Schema({
                 {
                     subcategoryId: { type: mongoose.Schema.Types.ObjectId, required: true },
                     title: { type: String, required: true },
-                    requestType: { type: String, required: true },
-                    selectedAmount: { type: Number, required: true },
+                    requestType: { type: String,  },
+                    selectedAmount: { type: Number,  },
                     instructions: { type: String },
                     instructionsImages: { type: [String], default: [] },
                     instructionAudio: { type: String, default: null },
                     scheduledTiming: {
-                        startTime: { type: Date, required: true },
-                        endTime: { type: Date, required: true },
+                        startTime: { type: Date,  },
+                        endTime: { type: Date,  },
                     },
-                    workersRequirment: { type: Number, required: true },
+                    workersRequirment: { type: Number, },
                     assignedWorkers: {
                         type: Number,
-                        required: true,
                     },
                     serviceStatus: {
                         type: String,
-                        enum: ['pending', 'confirmed', 'cancelled', 'inProgress', 'completed'],
+                        enum: ['pending', 'accepted', 'rejected'],
                         default: 'pending',
-                    },
-                    otpDetails: {
-                        startOtp: { type: Number, default: 0 },
-                        endOtp: { type: Number, default: 0 },
-                        startOtpConfirmed: { type: Boolean, default: false },
-                        endOtpConfirmed: { type: Boolean, default: false },
-                    },
-                    workConfirmation: {
-                        workStarted: { type: Boolean, default: false },
-                        startTime: { type: Date, default: null },
-                        workEnded: { type: Boolean, default: false },
-                        endTime: { type: Date, default: null },
-                    },
-                    paymentReceived: {
-                        type: Boolean,
-                        default: false,
                     },
                 },
             ],
@@ -76,10 +59,6 @@ const ServiceProviderOrderSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    isOrderRequested: {
-        type: Boolean,
-        default: true,
-    },
     paymentDetails: {
         totalAmount: { type: Number, default: 0 },
         paidAmount: { type: Number, default: 0 },
@@ -98,20 +77,4 @@ const ServiceProviderOrderSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
-// Middleware to update `isOrderRequested`
-ServiceProviderOrderSchema.pre("save", function (next) {
-    const order = this;
-
-    const allStatuses = order.servicesProvided.flatMap(sp =>
-        sp.subcategory.map(sub => sub.serviceStatus)
-    );
-
-    // If all statuses are NOT 'pending', set isOrderRequested to false
-    if (allStatuses.some(status => status !== "pending")) {
-        order.isOrderRequested = false;
-    }
-
-    next();
-});
-
-export default mongoose.models.ServiceProviderOrder || mongoose.model('ServiceProviderOrder', ServiceProviderOrderSchema);
+export default mongoose.models.ServiceProviderOrderRequests || mongoose.model('ServiceProviderOrderRequest', ServiceProviderOrderRequestSchema);

@@ -10,7 +10,6 @@ import UserAuth from '../middleware/User.Auth.js';
 // POST ROUTES
 router.route('/verifyForExistingServiceProvide').post(ServiceProviderController.verifyForExistingServiceProvide);
 router.route('/verifyServiceProviderOtp').post(ServiceProviderController.verifyServiceProviderOtp);
-router.route('/acceptServiceRequest').post(UserAuth, ServiceRequestController.acceptServiceRequest);
 router.route('/addServiceProviderSkills').post(UserAuth, ServiceProviderController.addServiceProviderSkills);
 
 // GET ROUTES

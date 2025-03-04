@@ -4,6 +4,10 @@ import { sendEmail } from "../services/email.service.js";
 import { sendOTP } from "../services/otp.service.js";
 import 'dotenv/config';
 
+export async function AbortApi(req, res) {
+    return res.status(404).json({ success: false, message: 'The endpoint is not active anymore' })
+}
+
 /** POST: http://localhost:3027/api/v1/sendOtp
  * @body {
  *  "phone": "8765445678"
@@ -62,17 +66,18 @@ export async function sendEmailQuery(req, res) {
 
 export async function uploadedFileResponse(req, res) {
     try {
-        const file = req.file;
-        if (!file) {
+        const files = req.files || (req.file ? [req.file] : []); // Handle both single and multiple uploads
+        
+        if (!files.length) {
             return res.status(400).send({ success: false, message: 'No file uploaded' });
         }
 
-        const fileDetails = {
+        const fileDetails = files.map(file => ({
             originalName: file.originalname,
-            path: file.location, // If using S3, otherwise use file.path
+            path: file.location || file.path, // If using S3, otherwise use local path
             mimetype: file.mimetype,
             size: file.size,
-        };
+        }));
 
         res.status(200).send({ success: true, file: fileDetails });
     } catch (error) {

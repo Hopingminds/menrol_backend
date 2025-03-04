@@ -2,6 +2,7 @@ import corsOptions from "../configs/cors.config.js";
 import notificationEmitter from "../events/notificationEmitter.js";
 import ServiceOrderModel from "../models/ServiceOrder.model.js";
 import ServiceProviderModel from "../models/ServiceProvider.model.js";
+import ServiceProviderInfoModel from "../models/ServiceProviderInfo.model.js";
 import ServiceProviderOrderModel from "../models/ServiceProviderOrder.model.js";
 import ServiceRequestModel from "../models/ServiceRequest.model.js";
 import ServicesModel from "../models/Services.model.js";
@@ -21,7 +22,6 @@ export async function purchaseService(req, res) {
         if (!orderValue.success) {
             throw new Error('Failed to get order value.');
         }
-        console.log(orderValue.totalAmount);
 
         const newServiceOrder = new ServiceOrderModel({
             user: userID,
@@ -211,17 +211,16 @@ export async function fetchEligibleServiceProviders(req, res) {
                         }
 
                         // Fetch eligible service providers
-                        const eligibleProviders = await ServiceProviderModel.find({
-                            skills: {
-                                $elemMatch: {
-                                    subcategories: {
-                                        $elemMatch: { subcategory: subcategoryId },
-                                    },
-                                },
-                            },
-                            isAccountBlocked: false,
+                        const eligibleProviders = await ServiceProviderInfoModel.find({
+                            "skills.subcategories.subcategory": subcategoryId,
                         })
-                            .select('-password -authToken -aadharCard -totalEarnings -activeSubscription -providerSubscription') // Exclude sensitive fields
+                            .select(
+                                "user rating availability instantAvailability experience skills workHistory feedback"
+                            ) // Selecting necessary fields
+                            .populate({
+                                path: "user",
+                                select: "name profileImage isOnline",
+                            })
                             .lean();
 
                         return {
@@ -396,6 +395,243 @@ export async function updateOrderTiming(req, res) {
         await serviceProviderOrder.save();
 
         return res.status(200).json({ success: true, message: "Service timing updated successfully.", order });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
+    }
+}
+
+export async function sendOrderRequestToProvider(req, res) {
+    try {
+        const { orderId, serviceId, subcategoryId, providerId } = req.body;
+
+        const order = await ServiceOrderModel.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Order not found." });
+        }
+
+        const serviceRequest = order.serviceRequest.find(req => req.service.toString() === serviceId);
+        if (!serviceRequest) {
+            return res.status(404).json({ success: false, message: "Service not found in the order." });
+        }
+
+        const subcategory = serviceRequest.subcategory.find(
+            sub => sub.subcategoryId.toString() === subcategoryId
+        );
+        if (!subcategory) {
+            return res.status(404).json({ success: false, message: "Subcategory not found in the service request." });
+        }
+
+        if (subcategory.status !== 'pending') {
+            return res.status(400).json({
+                success: false,
+                message: `Subcategory is already ${subcategory.status}.`,
+            });
+        }
+
+        const existingProviderIndex = subcategory.serviceProviders.findIndex(ServiceProvider => ServiceProvider.serviceProviderId.toString() === providerId);
+
+        if (existingProviderIndex !== -1) {
+            return res.json({
+                success: false,
+                message: "Service provider for this service already exists."
+            })
+        }
+
+        const existingServiceProviderOrder = await ServiceProviderOrderModel.findOne({
+            ServiceProvider: providerId,
+            serviceOrderId: orderId,
+        });
+
+        if (!existingServiceProviderOrder) {
+            // Create a new ServiceProviderOrder
+            const newServiceProviderOrder = new ServiceProviderOrderModel({
+                ServiceProvider: providerId,
+                serviceOrderId: orderId,
+                servicesProvided: [
+                    {
+                        serviceId,
+                        subcategory: [
+                            {
+                                subcategoryId,
+                                title: subcategory.title,
+                                requestType: subcategory.requestType,
+                                selectedAmount: subcategory.selectedAmount || 0,
+                                instructions: subcategory.instructions || "",
+                                instructionsImages: subcategory.instructionsImages || [],
+                                instructionAudio: subcategory.instructionAudio,
+                                scheduledTiming: subcategory.scheduledTiming,
+                                workersRequirment: subcategory.workersRequirment,
+                                assignedWorkers: 1, // Default to 0, can be updated later
+                                serviceStatus: 'pending',
+                                otpDetails: {
+                                    startOtp: 0,
+                                    endOtp: 0,
+                                    startOtpConfirmed: false,
+                                    endOtpConfirmed: false,
+                                },
+                                workConfirmation: {
+                                    workStarted: false,
+                                    startTime: null,
+                                    workEnded: false,
+                                    endTime: null,
+                                },
+                            },
+                        ],
+                    },
+                ],
+                location: order.location,
+                address: order.address,
+                paymentDetails: {
+                    totalAmount: order.payment.totalamount,
+                    paidAmount: order.payment.paidAmount,
+                    dueAmount: order.payment.dueAmount,
+                    paymentType: order.payment.paymentType,
+                    paymentStatus: order.payment.paymentstatus,
+                    lastPaymentDate: order.payment.paymentDate,
+                },
+            });
+            await newServiceProviderOrder.save();
+        } else {
+            // Update the existing ServiceProviderOrder
+            const service = existingServiceProviderOrder.servicesProvided.find(s => s.serviceId.toString() === serviceId);
+            if (!service) {
+                // Add a new service
+                existingServiceProviderOrder.servicesProvided.push({
+                    serviceId,
+                    subcategory: [
+                        {
+                            subcategoryId,
+                            title: subcategory.title,
+                            requestType: subcategory.requestType,
+                            selectedAmount: subcategory.selectedAmount || 0,
+                            instructions: subcategory.instructions || "",
+                            instructionsImages: subcategory.instructionsImages || [],
+                            instructionAudio: subcategory.instructionAudio,
+                            scheduledTiming: subcategory.scheduledTiming,
+                            workersRequirment: subcategory.workersRequirment,
+                            assignedWorkers: 1, // Default to 0, can be updated later
+                            serviceStatus: 'pending',
+                            otpDetails: {
+                                startOtp: 0,
+                                endOtp: 0,
+                                startOtpConfirmed: false,
+                                endOtpConfirmed: false,
+                            },
+                            workConfirmation: {
+                                workStarted: false,
+                                startTime: null,
+                                workEnded: false,
+                                endTime: null,
+                            },
+                        },
+                    ],
+                });
+            } else {
+                // Add a new subcategory to the existing service
+                service.subcategory.push({
+                    subcategoryId,
+                    title: subcategory.title,
+                    requestType: subcategory.requestType,
+                    selectedAmount: subcategory.selectedAmount,
+                    instructions: subcategory.instructions || "",
+                    instructionsImages: subcategory.instructionsImages || [],
+                    instructionAudio: subcategory.instructionAudio,
+                    scheduledTiming: subcategory.scheduledTiming,
+                    workersRequirment: subcategory.workersRequirment,
+                    assignedWorkers: 1, // Default to 0, can be updated later
+                    serviceStatus: 'pending',
+                    otpDetails: {
+                        startOtp: 0,
+                        endOtp: 0,
+                        startOtpConfirmed: false,
+                        endOtpConfirmed: false,
+                    },
+                    workConfirmation: {
+                        workStarted: false,
+                        startTime: null,
+                        workEnded: false,
+                        endTime: null,
+                    },
+                });
+            }
+            await existingServiceProviderOrder.save();
+        }
+
+        // Add provider to the order's subcategory serviceProviders array
+        subcategory.serviceProviders.push({ serviceProviderId: providerId, status: 'pending' });
+        await order.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Order request sent to service provider successfully.",
+            // data: serviceProviderRequest
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
+    }
+}
+
+export async function getAllOrderRequestForProvider(req, res) {
+    try {
+        const { userID } = req.sp;
+
+        const orders = await ServiceProviderOrderModel.find({ ServiceProvider: userID, isOrderRequested: true });
+        if(!orders || orders.length === 0){
+            return res.status(404).json({ success: false, message: "No order requests found." });
+        }
+
+        return res.status(200).json({ success: true, message: "Order requests found.", data: orders }); 
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
+    }
+}
+
+export async function acceptOrderRequest(req, res) {
+    try {
+        const { userID } = req.sp;
+        const { orderId, serviceId, subcategoryId } = req.body;
+
+        const serviceProviderRequest = await ServiceProviderOrderModel.findOne({ ServiceProvider: userID, serviceOrderId: orderId });
+        if (!serviceProviderRequest) {
+            return res.status(404).json({ success: false, message: "Order request not found." });
+        }
+
+        if (serviceProviderRequest.ServiceProvider.toString() !== userID) {
+            return res.status(403).json({ success: false, message: "Unauthorized action." });
+        }
+
+        serviceProviderRequest.servicesProvided.forEach(service => {
+            if (service.serviceId.toString() === serviceId) {
+                service.subcategory.forEach(sub => {
+                    if (sub.subcategoryId.toString() === subcategoryId) {
+                        sub.serviceStatus = 'confirmed';
+                    }
+                });
+            }
+        });
+        await serviceProviderRequest.save();
+
+        const order = await ServiceOrderModel.findById(orderId);
+        if (order) {
+            order.serviceRequest.forEach(service => {
+                if (service.serviceId.toString() === serviceId) {
+                    service.subcategory.forEach(sub => {
+                        if (sub.subcategoryId.toString() === subcategoryId) {
+                            const providerIndex = sub.serviceProviders.findIndex(sp => sp.serviceProviderId.toString() === userID);
+                            if (providerIndex !== -1) {
+                                sub.serviceProviders[providerIndex].status = 'confirmed';
+                            }
+                        }
+                    });
+                }
+            });
+            await order.save();
+        }
+
+        return res.status(200).json({ success: true, message: "Order request accepted successfully." });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });

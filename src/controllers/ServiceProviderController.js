@@ -1324,9 +1324,9 @@ export async function confirmEndWorkingOtp(req, res) {
             return res.status(404).json({ success: false, message: "Subcategory not found for service Provider order." });
         }
 
-        if(!serviceProviderOrdersubcategory.paymentReceived){
-            return res.status(400).json({ success: false, message: 'Collect Payment First.' });
-        }
+        // if(!serviceProviderOrdersubcategory.paymentReceived){
+        //     return res.status(400).json({ success: false, message: 'Collect Payment First.' });
+        // }
 
         serviceProviderOrdersubcategory.serviceStatus = 'completed';
         serviceProviderOrdersubcategory.otpDetails.endOtp = endOtp;
@@ -1437,7 +1437,7 @@ export async function deleteServiceProviderAccount(req, res) {
             return res.status(404).json({ success: false, message: "Service Provider not found" });
         }
 
-        await ServiceProviderModel.findByIdAndDelete(userID);
+        await UserModel.findByIdAndDelete(userID);
 
         return res.status(200).json({ success: true, message: "Service Provider account deleted successfully" });
     } catch (error) {

@@ -40,6 +40,7 @@ const ServiceOrderSchema = new mongoose.Schema({
                     },
                     instructions: { type: String },
                     instructionsImages: { type: [String], default: [] },
+                    instructionAudio: { type: String, default: null },
                     requestOperation: {
                         startOtp: {
                             type: Number,

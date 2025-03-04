@@ -43,6 +43,10 @@ const ServiceRequestSchema = new mongoose.Schema({
                 type: String,
                 default: null,
             },
+            instructionAudio: {
+                type: String,
+                default: null,
+            },
             instructionsImages: [{
                 type: String,
                 default: null,
