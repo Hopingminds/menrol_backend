@@ -18,10 +18,10 @@ export async function purchaseService(req, res) {
             return res.status(404).json({ success: false, message: "Service request not found" });
         }
 
-        const orderValue = await getOrderValue(userID);
-        if (!orderValue.success) {
-            throw new Error('Failed to get order value.');
-        }
+        // const orderValue = await getOrderValue(userID);
+        // if (!orderValue.success) {
+        //     throw new Error('Failed to get order value.');
+        // }
 
         const newServiceOrder = new ServiceOrderModel({
             user: userID,
@@ -29,9 +29,9 @@ export async function purchaseService(req, res) {
             location,
             address,
             payment: {
-                totalamount: orderValue.totalAmount,
+                totalamount: 0,
                 paidAmount: 0,
-                dueAmount: orderValue.totalAmount, // Since full payment is not made
+                dueAmount: 0, // Since full payment is not made
                 status: 'pending',
                 paymentmethod: 'app',
                 paymentDate: new Date(),
