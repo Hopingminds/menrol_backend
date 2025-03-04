@@ -135,7 +135,7 @@ export async function addServiceRequest(req, res) {
             instructionAudio: subcategory.instructionAudio || null,
             scheduledTiming: {
                 startTime: new Date(subcategory.scheduledTiming.startTime),
-                endTime: subcategory.scheduledTiming.endTime ? new Date(subcategory.scheduledTiming.endTime) : null,
+                endTime: subcategory.scheduledTiming.endTime ? new Date(subcategory.scheduledTiming.endTime) : new Date(Date.now() + 86400000),
             },
         };
 
