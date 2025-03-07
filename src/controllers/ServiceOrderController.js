@@ -1,5 +1,6 @@
 import corsOptions from "../configs/cors.config.js";
 import notificationEmitter from "../events/notificationEmitter.js";
+import { populateSubcategoryInServiceOrder } from "../lib/populateSubcategory.js";
 import ServiceOrderModel from "../models/ServiceOrder.model.js";
 import ServiceProviderModel from "../models/ServiceProvider.model.js";
 import ServiceProviderInfoModel from "../models/ServiceProviderInfo.model.js";
@@ -195,8 +196,14 @@ export async function fetchEligibleServiceProviders(req, res) {
             return res.status(404).json({ success: false, message: "Order not found" });
         }
 
+        const populatedRequests = await populateSubcategoryInServiceOrder(order);
+
+        const requestObject = order.toObject();
+        delete requestObject.serviceRequest;
+        requestObject.serviceRequest = populatedRequests;
+
         const results = await Promise.all(
-            order.serviceRequest.map(async (request) => {
+            populatedRequests.map(async (request) => {
                 const { subcategory } = request;
                 if (!subcategory || !Array.isArray(subcategory)) {
                     throw new Error('Invalid subcategory data');
