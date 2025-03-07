@@ -679,7 +679,7 @@ export async function getMostBookedServices(req, res) {
             { $limit: 10 },
             { 
                 $project: {
-                    _id: 0,
+                    _id: 1,
                     category: 1,
                     categoryImage: 1,
                     categoryDescription: 1,
