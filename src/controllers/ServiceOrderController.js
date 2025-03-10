@@ -619,12 +619,11 @@ export async function acceptOrderRequest(req, res) {
                 });
             }
         });
-        await serviceProviderRequest.save();
 
         const order = await ServiceOrderModel.findById(orderId);
         if (order) {
             order.serviceRequest.forEach(service => {
-                if (service.serviceId.toString() === serviceId) {
+                if (service.service.toString() === serviceId) {
                     service.subcategory.forEach(sub => {
                         if (sub.subcategoryId.toString() === subcategoryId) {
                             const providerIndex = sub.serviceProviders.findIndex(sp => sp.serviceProviderId.toString() === userID);
@@ -636,9 +635,12 @@ export async function acceptOrderRequest(req, res) {
                 }
             });
             await order.save();
+            await serviceProviderRequest.save();
+            return res.status(200).json({ success: true, message: "Order request accepted successfully." });
+        } else {
+            return res.status(404).json({ success: false, message: "Order request not found." });
         }
 
-        return res.status(200).json({ success: true, message: "Order request accepted successfully." });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
