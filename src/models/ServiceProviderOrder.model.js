@@ -107,8 +107,10 @@ ServiceProviderOrderSchema.pre("save", function (next) {
     );
 
     // If all statuses are NOT 'pending', set isOrderRequested to false
-    if (allStatuses.some(status => status !== "pending")) {
+    if (allStatuses.every(status => status !== "pending")) {
         order.isOrderRequested = false;
+    } else {
+        order.isOrderRequested = true;
     }
 
     next();
