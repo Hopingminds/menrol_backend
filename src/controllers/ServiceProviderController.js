@@ -1306,6 +1306,7 @@ export async function confirmEndWorkingOtp(req, res) {
             return res.status(404).json({ success: false, message: 'Service Provider Not Found for the order request' });
         }
 
+        subcategory.status = 'completed';
         serviceProviderSubcategory.status = 'completed';
 
         if (endOtp !== subcategory.requestOperation.endOtp) {
@@ -1327,7 +1328,7 @@ export async function confirmEndWorkingOtp(req, res) {
         // if(!serviceProviderOrdersubcategory.paymentReceived){
         //     return res.status(400).json({ success: false, message: 'Collect Payment First.' });
         // }
-
+        subcategory.status = 
         serviceProviderOrdersubcategory.serviceStatus = 'completed';
         serviceProviderOrdersubcategory.otpDetails.endOtp = endOtp;
         serviceProviderOrdersubcategory.otpDetails.endOtpConfirmed = true;
