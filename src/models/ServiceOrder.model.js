@@ -185,7 +185,7 @@ ServiceOrderSchema.pre('save', async function (next) {
                 ).length;
 
                 if (confirmedProviders === sub.workersRequirment) {
-                    sub.status = 'inProgress';
+                    sub.status = 'confirmed';
                 }
             });
         });
