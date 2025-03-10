@@ -630,6 +630,14 @@ export async function acceptOrderRequest(req, res) {
                             if (providerIndex !== -1) {
                                 sub.serviceProviders[providerIndex].status = 'confirmed';
                             }
+
+                            const confirmedProviders = sub.serviceProviders.filter(
+                                (provider) => provider.status === 'confirmed'
+                            ).length;
+            
+                            if (confirmedProviders === sub.workersRequirment) {
+                                sub.status = 'confirmed';
+                            }
                         }
                     });
                 }

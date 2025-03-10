@@ -176,24 +176,5 @@ ServiceOrderSchema.post('save', async function (doc, next) {
     }
 });
 
-ServiceOrderSchema.pre('save', async function (next) {
-    try {
-        this.serviceRequest.forEach((request) => {
-            request.subcategory.forEach((sub) => {
-                const confirmedProviders = sub.serviceProviders.filter(
-                    (provider) => provider.status === 'confirmed'
-                ).length;
-
-                if (confirmedProviders === sub.workersRequirment) {
-                    sub.status = 'confirmed';
-                }
-            });
-        });
-
-        next();
-    } catch (error) {
-        next(error);
-    }
-});
 
 export default mongoose.model.ServiceOrder || mongoose.model('ServiceOrder', ServiceOrderSchema);
