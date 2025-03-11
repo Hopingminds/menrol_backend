@@ -258,3 +258,60 @@ export async function getUserPosts(req, res) {
         return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
     }
 }
+
+export async function getPostsComments(req, res) {
+    try {
+        const { postId } = req.params;
+        let { page = 1 } = req.query;
+        page = parseInt(page, 10);
+
+        if (!postId) {
+            return res.status(400).json({ success: false, message: "Post ID is required." });
+        }
+
+        const post = await PostModel.findById(postId)
+            .select("comments")
+            .populate({
+                path: "comments.user",
+                select: "username profileImage"
+            })
+            .lean();
+
+        if (!post) {
+            return res.status(404).json({ success: false, message: "Post not found." });
+        }
+
+        const commentsPerPage = 10;
+        const totalComments = post.comments.length;
+        const totalPages = Math.ceil(totalComments / commentsPerPage);
+
+        // If page exceeds total pages, return empty result
+        if (page > totalPages) {
+            return res.json({
+                comments: [],
+                currentPage: page,
+                totalComments,
+                totalPages,
+                message: "No more comments available."
+            });
+        }
+
+        // Reverse comments to get latest ones first
+        const reversedComments = post.comments.reverse();
+
+        const startIndex = (page - 1) * commentsPerPage;
+        const endIndex = startIndex + commentsPerPage;
+
+        const paginatedComments = reversedComments.slice(startIndex, endIndex);
+
+        return res.status(200).json({
+            success: true,
+            comments: paginatedComments,
+            currentPage: page,
+            totalComments,
+            totalPages,
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
+    }
+}

@@ -13,6 +13,7 @@ router.route('/commentOnPost').post(UserAuth, PostController.commentOnPost);
 // GET ROUTES
 router.route('/getUserPosts').get(UserAuth, PostController.getUserPosts);
 router.route('/getNextPosts').get(PostController.getNextPosts);
+router.route('/getPostsComments/:postId').get(PostController.getPostsComments);
 
 // PUT ROUTES
 
