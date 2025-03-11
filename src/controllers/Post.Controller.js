@@ -214,6 +214,7 @@ export async function getNextPosts(req, res) {
             .sort({ createdAt: sortOrder })
             .skip(skip)
             .limit(limit)
+            .select("-comments")
             .populate("publishedBy", "name profileImage")
             .populate("likes", "name profileImage")
             .populate("comments.user", "name profileImage");
