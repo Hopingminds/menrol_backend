@@ -316,3 +316,28 @@ export async function getPostsComments(req, res) {
         return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
     }
 }
+
+export async function getTrendingPosts(req, res) {
+    try {
+        const { contentType = 'shortVideo' } = req.query;
+
+        if (!contentType || !['shortVideo', 'video'].includes(contentType)) {
+            return res.status(400).json({ success: false, message: "Invalid content type. Use 'shortVideo' or 'video'." });
+        }
+
+        const allTrendingPosts = await PostModel.find({ contentType })
+            .populate("publishedBy", "name profileImage")
+            .lean();
+
+        if (allTrendingPosts.length === 0) {
+            return res.status(404).json({ success: false, message: "No trending posts found." });
+        }
+
+        const shuffledPosts = allTrendingPosts.sort(() => 0.5 - Math.random());
+        const randomPosts = shuffledPosts.slice(0, 4);
+
+        return res.status(200).json({ success: true, data: randomPosts });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
+    }
+}
