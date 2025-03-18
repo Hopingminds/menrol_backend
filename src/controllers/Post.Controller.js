@@ -274,7 +274,7 @@ export async function getPostsComments(req, res) {
             .select("comments")
             .populate({
                 path: "comments.user",
-                select: "username profileImage"
+                select: "name profileImage"
             })
             .lean();
 
