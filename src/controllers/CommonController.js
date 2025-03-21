@@ -26,7 +26,10 @@ export async function sendOtp(req, res) {
         const result = await sendOTP(phone);
 
         if (!result.success) {
-            throw new Error('Failed to send OTP.');
+            return res.status(503).json({ 
+                success: false, 
+                message: result.message || 'Failed to send OTP.' 
+            });
         }
         
         return res.status(201).json({ success: true, message: 'OTP sent successfully.' })

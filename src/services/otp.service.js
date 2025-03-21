@@ -29,9 +29,8 @@ export async function sendOTP(mobileNo) {
         if(number !== '9898989898'){
             // Send SMS
             const response = await axios.get(url);
-            if (!response.data.includes('success')) { // Adjust based on actual API response
-                
-                throw new Error('Failed to send OTP');
+            if (!response.data.includes('success')) {
+                return { success: false, message: 'OTP Service Not Working!' };
             }
         }
         else if(number == '9898989898') {
@@ -48,6 +47,6 @@ export async function sendOTP(mobileNo) {
         
         return { success: true, message: 'OTP sent successfully' };
     } catch (error) {
-        return { success: false, message: 'OTP sent failed' };
+        return { success: false, message: error.message || 'OTP sending failed' };
     }
 }
